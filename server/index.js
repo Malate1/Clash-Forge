@@ -4,15 +4,8 @@ import cors from 'cors'
 
 const PORT = process.env.PORT || 5000
 const TOKEN = process.env.COC_API_TOKEN
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
 const COC_BASE = 'https://api.clashofclans.com/v1'
-
-// Support multiple allowed origins (Comma-separated in process.env.CLIENT_ORIGIN or fallback defaults)
-const allowedOrigins = process.env.CLIENT_ORIGIN
-  ? process.env.CLIENT_ORIGIN.split(',').map((o) => o.trim())
-  : [
-      'http://localhost:5173',
-      'https://clash-forge-snowy.vercel.app'
-    ]
 
 if (!TOKEN) {
   console.warn(
@@ -22,21 +15,7 @@ if (!TOKEN) {
 }
 
 const app = express()
-
-// Dynamic CORS configuration allowing all matching origins in our list
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow server-to-server requests or tools like Postman/curl (where origin is undefined)
-      if (!origin) return callback(null, true)
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true)
-      }
-      return callback(new Error(`CORS error: Origin ${origin} is not allowed.`))
-    },
-    credentials: true
-  })
-)
+app.use(cors({ origin: CLIENT_ORIGIN }))
 
 // Clash of Clans tags use '#', which must be percent-encoded as %23 in the path.
 function encodedTag(rawTag) {
@@ -89,5 +68,5 @@ app.get('/api/players/:tag', (req, res) => {
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 
 app.listen(PORT, () => {
-  console.log(`CoC proxy listening on port ${PORT}`)
+  console.log(`CoC proxy listening on http://localhost:${PORT}`)
 })
