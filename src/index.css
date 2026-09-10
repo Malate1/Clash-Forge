@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  /* Updated to the dark slate Supercell background */
+  background-color: #0f141e;
+  color: #e2e8f0; /* text-slate-200 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Replaced the old gold/purple gradients with a subtle deep-blue radial glow typical of game stores */
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(42, 119, 244, 0.08), transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(255, 200, 0, 0.03), transparent 40%);
+  background-attachment: fixed;
+}
+
+::selection {
+  /* Supercell Blue for text highlighting */
+  background: rgba(42, 119, 244, 0.4);
+  color: #ffffff;
+}
+
+/* 
+  TRANSFORMED LEGACY CLASSES
+  These override your old "clipped corner" shapes with the new chunky, rounded Store UI.
+  This ensures any unedited pages (like PlayerPage) automatically look updated.
+*/
+.plate, .plate-sm {
+  position: relative;
+  background-color: #182030;
+  border: 2px solid rgba(51, 65, 85, 0.5); /* border-slate-700/50 */
+  border-radius: 1rem; /* rounded-2xl */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  /* Removes the old clip-path entirely */
+  clip-path: none; 
+}
+
+/* Rivets removed for the modern clean store UI */
+.plate-rivets::before,
+.plate-rivets::after {
+  display: none;
+}
+
+/* Updated banner to feel a bit more rigid/symmetrical */
+.banner {
+  clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%);
+}
+
+/* 
+  PROGRESS BARS 
+  Updated to use deep dark tracks and vibrant gamified greens/golds
+*/
+.progress-track {
+  height: 8px; /* Slightly thicker for the chunky feel */
+  background: #0a0d14; /* Deep void background for contrast */
+  border-radius: 9999px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+}
+
+.progress-fill {
+  height: 100%;
+  /* Gamified vibrant green */
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  border-radius: 9999px;
+  transition: width 300ms ease;
+}
+
+.progress-fill.maxed {
+  /* Bright Clash Gold for max levels */
+  background: linear-gradient(90deg, #eab308, #ffc800);
+  box-shadow: 0 0 10px rgba(255, 200, 0, 0.5);
+}
+
+.focus-ring:focus-visible {
+  /* Updated to Clash Gold */
+  outline: 2px solid #ffc800;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Syntax is completely correct. */
+@font-face {
+  font-family: 'Clash_Regular';
+  /* Make sure the file name matches exactly what you put in the public/fonts folder */
+  src: url('/fonts/Clash_Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
