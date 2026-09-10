@@ -13,7 +13,7 @@ export default function Navbar({ compactSearch = true }) {
             className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105"
           />
           <span className="font-body text-[11px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline">
-            find any clan or player
+            finds any clan or player
           </span>
         </Link>
         
