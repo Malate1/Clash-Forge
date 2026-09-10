@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "node coc.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
