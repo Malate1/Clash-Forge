@@ -4,18 +4,17 @@ import cors from 'cors'
 
 const PORT = process.env.PORT || 5000
 const TOKEN = process.env.COC_API_TOKEN
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
 const COC_BASE = 'https://api.clashofclans.com/v1'
 
-if (!TOKEN) {
-  console.warn(
-    '\n[warn] COC_API_TOKEN is not set. Requests will fail until you add one to server/.env\n' +
-      'Create a key at https://developer.clashofclans.com whitelisted to this server\'s public IP.\n'
-  )
-}
-
 const app = express()
-app.use(cors({ origin: CLIENT_ORIGIN }))
+
+// Allow requests from localhost during dev and your Vercel deployment domain
+app.use(
+  cors({
+    origin: '*',
+    credentials: true
+  })
+)
 
 // Clash of Clans tags use '#', which must be percent-encoded as %23 in the path.
 function encodedTag(rawTag) {
@@ -24,15 +23,28 @@ function encodedTag(rawTag) {
 }
 
 async function forward(res, path) {
+  if (!TOKEN) {
+    return res.status(500).json({
+      reason: 'missingToken',
+      message: 'COC_API_TOKEN is missing in environment variables.'
+    })
+  }
+
   try {
     const upstream = await fetch(`${COC_BASE}${path}`, {
-      headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/json' }
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        Accept: 'application/json'
+      }
     })
     const body = await upstream.json()
     res.status(upstream.status).json(body)
   } catch (err) {
     console.error(err)
-    res.status(502).json({ reason: 'proxyError', message: 'Could not reach the Clash of Clans API.' })
+    res.status(502).json({
+      reason: 'proxyError',
+      message: 'Could not reach the Clash of Clans API.'
+    })
   }
 }
 
@@ -67,6 +79,12 @@ app.get('/api/players/:tag', (req, res) => {
 
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 
-app.listen(PORT, () => {
-  console.log(`CoC proxy listening on http://localhost:${PORT}`)
-})
+// Local development server runner
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`CoC proxy listening on http://localhost:${PORT}`)
+  })
+}
+
+// Export default app for Vercel Serverless Functions
+export default app
