@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import fetch from 'node-fetch'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 
 const PORT = process.env.PORT || 5000
