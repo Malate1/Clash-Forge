@@ -1,4 +1,4 @@
-# Roster — Clash of Clans clan &amp; player lookup
+# Clash Forge — Clash of Clans clan &amp; player lookup
 
 A React + Tailwind site for looking up Clash of Clans clans and players by tag — no
 account or login required. Search a clan tag to see its roster, war record and points
