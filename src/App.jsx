@@ -1,4 +1,5 @@
 import { Routes, Route, Link } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import Navbar from './components/Navbar.jsx'
 import Home from './pages/Home.jsx'
 import ClanPage from './pages/ClanPage.jsx'
@@ -47,6 +48,7 @@ export default function App() {
           </p>
         </div>
       </footer>
+      <Analytics />
     </div>
   )
 }
