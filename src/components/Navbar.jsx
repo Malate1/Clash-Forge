@@ -17,11 +17,11 @@ export default function Navbar({ compactSearch = true }) {
           </span>
         </Link>
         
-        {compactSearch && (
+        {/* {compactSearch && (
           <div className="flex-1 max-w-md ml-auto">
             <SearchBar size="compact" />
           </div>
-        )}
+        )} */}
       </div>
     </header>
   )
