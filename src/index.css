@@ -2,326 +2,234 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  color-scheme: dark;
+@font-face {
+  font-family: 'Clash_Regular';
+  src: url('/fonts/Clash_Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
-html:not(.dark) {
+:root {
   color-scheme: light;
+  --bg: #f5f7fb;
+  --surface: rgba(255,255,255,.88);
+  --surface-strong: #fff;
+  --surface-muted: #f8fafc;
+  --surface-hover: #eef2f7;
+  --border: rgba(15,23,42,.10);
+  --border-strong: rgba(15,23,42,.18);
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --gold: #f5c542;
+  --blue: #3b82f6;
+  --blue-strong: #2563eb;
+  --shadow: 0 18px 48px rgba(15,23,42,.10);
 }
 
+html.dark {
+  color-scheme: dark;
+  --bg: #070b12;
+  --surface: rgba(17,24,39,.78);
+  --surface-strong: #111827;
+  --surface-muted: #0f1724;
+  --surface-hover: #172033;
+  --border: rgba(148,163,184,.13);
+  --border-strong: rgba(148,163,184,.24);
+  --text: #f8fafc;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --gold: #f7ca46;
+  --blue: #4f8df7;
+  --blue-strong: #3675df;
+  --shadow: 0 22px 56px rgba(0,0,0,.34);
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--bg); scroll-behavior: smooth; }
 body {
-  background-color: #ffffff;
-  color: #1e293b;
-  transition: background-color 200ms ease, color 200ms ease;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 16% -8%, rgba(59,130,246,.11), transparent 32rem),
+    radial-gradient(circle at 86% 2%, rgba(245,197,66,.07), transparent 28rem),
+    var(--bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-image: none;
-  background-attachment: fixed;
-  min-width: 320px;
-} 
+}
 
 html.dark body {
-  background-color: #0f141e;
-  color: #e2e8f0;
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(42, 119, 244, 0.08), transparent 50%),
-    radial-gradient(circle at 100% 100%, rgba(255, 200, 0, 0.03), transparent 40%);
+  background:
+    radial-gradient(circle at 16% -8%, rgba(59,130,246,.13), transparent 34rem),
+    radial-gradient(circle at 86% 2%, rgba(245,197,66,.07), transparent 28rem),
+    linear-gradient(180deg,#070b12 0%,#090e17 50%,#070b12 100%);
 }
 
-.app {
-  background: transparent;
+button,input,select,a {
+  -webkit-tap-highlight-color: transparent;
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease,
+    box-shadow .16s ease, transform .16s ease, opacity .16s ease;
 }
+
+::selection { background: rgba(59,130,246,.3); color: var(--text); }
+.app { min-height: 100vh; background: transparent; }
 
 .site-header {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(148, 163, 184, 0.55);
-}
-
-html.dark .site-header {
-  background: rgba(10, 13, 20, 0.9);
-  border-color: rgba(51, 65, 85, 0.6);
+  background: color-mix(in srgb,var(--bg) 82%,transparent);
+  border-color: var(--border) !important;
+  box-shadow: 0 10px 34px rgba(0,0,0,.08) !important;
+  backdrop-filter: blur(18px) saturate(145%);
 }
 
 .theme-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.7rem;
-  background: #ffffff;
-  color: #334155;
-  font-size: 0.75rem;
+  justify-content: center;
+  gap: .5rem;
+  min-height: 2.35rem;
+  padding: .5rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-soft);
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  font-size: .72rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: .06em;
   cursor: pointer;
-  transition: all 180ms ease;
+}
+.theme-toggle:hover { background: var(--surface-strong); color: var(--text); transform: translateY(-1px); }
+.theme-toggle-icon { font-size: .9rem; line-height: 1; }
+
+/* Normalize legacy game-store surfaces into one modern system. */
+[class~="bg-[#182030]"],
+[class~="bg-[#131a27]"],
+[class~="bg-[#0f141e]"],
+[class~="bg-[#0f1523]"],
+[class~="bg-[#0d121d]"],
+[class~="bg-[#121824]"],
+[class~="bg-[#242f45]"] { background-color: var(--surface) !important; }
+[class~="bg-[#0a0d14]"] { background-color: var(--bg) !important; }
+[class~="bg-slate-800"],
+[class~="bg-slate-800/80"],
+[class~="bg-slate-800/50"] { background-color: var(--surface-muted) !important; }
+
+[class~="border-slate-700"],
+[class~="border-slate-700/80"],
+[class~="border-slate-700/70"],
+[class~="border-slate-700/60"],
+[class~="border-slate-700/50"],
+[class~="border-slate-800"],
+[class~="border-slate-800/80"],
+[class~="border-slate-800/60"],
+[class~="border-slate-600"],
+[class~="border-slate-600/50"] { border-color: var(--border) !important; }
+
+.border-2 { border-width: 1px !important; }
+.rounded-2xl { border-radius: 1.25rem !important; }
+.rounded-xl { border-radius: .95rem !important; }
+.shadow-xl,.shadow-lg,.shadow-md { box-shadow: var(--shadow) !important; }
+.shadow-inner { box-shadow: inset 0 1px 0 rgba(255,255,255,.03) !important; }
+
+.text-white,.text-slate-100 { color: var(--text) !important; }
+.text-slate-200,.text-slate-300 { color: var(--text-soft) !important; }
+.text-slate-400,.text-slate-500 { color: var(--text-muted) !important; }
+.text-slate-600,.text-slate-700 { color: color-mix(in srgb,var(--text-muted) 72%,transparent) !important; }
+[class~="text-[#ffc800]"] { color: var(--gold) !important; }
+[class~="bg-[#2a77f4]"] { background-color: var(--blue) !important; }
+[class~="hover:bg-[#3d85f5]"]:hover { background-color: var(--blue-strong) !important; }
+
+.hover\:bg-slate-800:hover,
+.hover\:bg-slate-800\/40:hover,
+.hover\:bg-slate-800\/50:hover,
+[class~="hover:bg-[#242f45]/50"]:hover,
+[class~="hover:bg-[#242f45]"]:hover { background-color: var(--surface-hover) !important; }
+.hover\:border-slate-500\/80:hover,
+.hover\:border-slate-600:hover { border-color: var(--border-strong) !important; }
+.divide-slate-700\/40 > :not([hidden]) ~ :not([hidden]) { border-color: var(--border) !important; }
+
+input,select {
+  color: var(--text) !important;
+  background-color: var(--surface-muted) !important;
+  border-color: var(--border) !important;
+}
+input::placeholder { color: var(--text-muted) !important; }
+input:focus,select:focus {
+  border-color: rgba(59,130,246,.65) !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.1) !important;
 }
 
-.theme-toggle:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
-}
-
-html.dark .theme-toggle {
-  border-color: #334155;
-  background: #182030;
-  color: #e2e8f0;
-}
-
-html.dark .theme-toggle:hover {
-  background: #202a3b;
-  border-color: #475569;
-}
-
-.theme-toggle-icon {
-  font-size: 1rem;
-  line-height: 1;
-}
-
-/* ==========================================================
-   LIGHT MODE
-   The application uses dark Tailwind utility classes throughout
-   the existing UI. These scoped overrides translate those shared
-   surfaces, text, borders, inputs and tables to a complete light
-   theme without changing the dark-mode design.
-   ========================================================== */
-html:not(.dark) [class~="bg-[#182030]"],
-html:not(.dark) [class~="bg-[#131a27]"] {
-  background-color: #ffffff;
-}
-
-html:not(.dark) [class~="bg-[#0f141e]"],
-html:not(.dark) [class~="bg-[#0f1523]"],
-html:not(.dark) [class~="bg-[#0d121d]"] {
-  background-color: #f8fafc;
-}
-
-html:not(.dark) [class~="bg-[#242f45]"],
-html:not(.dark) [class~="bg-[#0a0d14]"],
-html:not(.dark) [class~="bg-[#121824]"] {
-  background-color: #e2e8f0;
-}
-
-html:not(.dark) [class~="bg-[#0a0d14]"] {
-  background-color: #f8fafc;
-}
-
-html:not(.dark) [class~="bg-slate-800"],
-html:not(.dark) [class~="bg-slate-800/80"],
-html:not(.dark) [class~="bg-slate-800/50"],
-html:not(.dark) [class~="bg-[#0f141e]/30"],
-html:not(.dark) [class~="bg-[#0f1523]/50"] {
-  background-color: #e2e8f0;
-}
-
-html:not(.dark) .text-white,
-html:not(.dark) .text-slate-100 { color: #0f172a; }
-html:not(.dark) .text-slate-200 { color: #1e293b; }
-html:not(.dark) .text-slate-300 { color: #334155; }
-html:not(.dark) .text-slate-400 { color: #64748b; }
-html:not(.dark) .text-slate-500 { color: #64748b; }
-html:not(.dark) .text-slate-600 { color: #475569; }
-html:not(.dark) .text-slate-700 { color: #334155; }
-
-html:not(.dark) [class~="border-slate-700"],
-html:not(.dark) [class~="border-slate-700/80"],
-html:not(.dark) [class~="border-slate-700/60"],
-html:not(.dark) [class~="border-slate-700/50"],
-html:not(.dark) [class~="border-slate-800"],
-html:not(.dark) [class~="border-slate-800/80"],
-html:not(.dark) [class~="border-slate-600"],
-html:not(.dark) [class~="border-slate-600/50"] {
-  border-color: #cbd5e1;
-}
-
-html:not(.dark) [class~="divide-slate-700/40"] > :not([hidden]) ~ :not([hidden]) {
-  border-color: #e2e8f0;
-}
-
-html:not(.dark) input::placeholder { color: #94a3b8; }
-
-html:not(.dark) [class~="hover:bg-slate-800"]:hover,
-html:not(.dark) [class~="hover:bg-slate-800/40"]:hover,
-html:not(.dark) [class~="hover:bg-slate-800/50"]:hover {
-  background-color: #e2e8f0;
-}
-
-html:not(.dark) [class~="hover:bg-slate-700"]:hover { background-color: #cbd5e1; }
-html:not(.dark) [class~="hover:bg-[#242f45]/50"]:hover,
-html:not(.dark) [class~="hover:bg-[#242f45]/50"]:hover {
-  background-color: #f1f5f9;
-}
-
-/* Footer and other full-width surfaces also follow the selected theme. */
-html:not(.dark) [class~="bg-[#0a0d14]"] {
-  background-color: #f8fafc;
-}
-
-html:not(.dark) [class~="border-slate-800/60"] {
-  border-color: #e2e8f0;
-}
-html:not(.dark) [class~="hover:text-slate-200"]:hover { color: #0f172a; }
-
-html:not(.dark) .bg-gradient-to-r.from-amber-500 {
-  color: #0f172a;
-}
-
-html:not(.dark) select,
-html:not(.dark) input {
-  color-scheme: light;
-}
-
-html.dark select,
-html.dark input {
-  color-scheme: dark;
-}
-
-::selection {
-  /* Supercell Blue for text highlighting */
-  background: rgba(42, 119, 244, 0.4);
-  color: #ffffff;
-}
-
-/* 
-  TRANSFORMED LEGACY CLASSES
-  These override your old "clipped corner" shapes with the new chunky, rounded Store UI.
-  This ensures any unedited pages (like PlayerPage) automatically look updated.
-*/
-.plate, .plate-sm {
+.plate,.plate-sm {
   position: relative;
-  background-color: #ffffff;
-  border: 2px solid rgba(51, 65, 85, 0.5); /* border-slate-700/50 */
-  border-radius: 1rem; /* rounded-2xl */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  /* Removes the old clip-path entirely */
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.2rem;
+  box-shadow: var(--shadow);
   clip-path: none;
 }
+.plate-rivets::before,.plate-rivets::after { display: none; }
+.banner { clip-path: polygon(0 0,100% 0,100% 78%,50% 100%,0 78%); }
 
-html.dark .plate,
-html.dark .plate-sm {
-  background-color: #182030;
-}
-
-/* Rivets removed for the modern clean store UI */
-.plate-rivets::before,
-.plate-rivets::after {
-  display: none;
-}
-
-/* Updated banner to feel a bit more rigid/symmetrical */
-.banner {
-  clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%);
-}
-
-/* 
-  PROGRESS BARS 
-  Updated to use deep dark tracks and vibrant gamified greens/golds
-*/
 .progress-track {
-  height: 8px; /* Slightly thicker for the chunky feel */
-  background: #0a0d14; /* Deep void background for contrast */
-  border-radius: 9999px;
+  height: 7px;
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+  border-radius: 999px;
+  background: color-mix(in srgb,var(--text) 9%,transparent);
 }
-
 .progress-fill {
   height: 100%;
-  /* Gamified vibrant green */
-  background: linear-gradient(90deg, #22c55e, #4ade80);
-  border-radius: 9999px;
-  transition: width 300ms ease;
+  border-radius: 999px;
+  background: linear-gradient(90deg,#22c55e,#4ade80);
+  transition: width .3s ease;
 }
-
 .progress-fill.maxed {
-  /* Bright Clash Gold for max levels */
-  background: linear-gradient(90deg, #eab308, #ffc800);
-  box-shadow: 0 0 10px rgba(255, 200, 0, 0.5);
+  background: linear-gradient(90deg,#d8a914,var(--gold));
+  box-shadow: 0 0 18px rgba(245,197,66,.28);
 }
 
-.focus-ring:focus-visible {
-  /* Updated to Clash Gold */
-  outline: 2px solid #ffc800;
-  outline-offset: 2px;
+.focus-ring:focus-visible,a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
 }
 
-/* Keep wide data tables usable on phones: the table scrolls inside its container
-   instead of forcing the whole page to become wider than the viewport. */
-.overflow-x-auto {
-  max-width: 100%;
-  -webkit-overflow-scrolling: touch;
+table { border-collapse: separate; border-spacing: 0; }
+thead tr { background: var(--surface-muted) !important; }
+tbody tr { transition: background-color .14s ease; }
+tbody tr:hover { background: var(--surface-hover) !important; }
+.overflow-x-auto { max-width: 100%; -webkit-overflow-scrolling: touch; }
+img { max-width: 100%; }
+
+.hover\:-translate-y-1:hover { transform: translateY(-3px) !important; }
+[class*="shadow-[0_4px_0_"],
+[class*="shadow-[0_5px_0_"] { box-shadow: 0 10px 24px rgba(37,99,235,.22) !important; }
+[class*="hover:shadow-[0_2px_0_"]:hover {
+  box-shadow: 0 8px 18px rgba(37,99,235,.20) !important;
+  transform: translateY(-1px) !important;
 }
 
-img {
-  max-width: 100%;
+@media (max-width:639px) {
+  main { padding-left: .85rem; padding-right: .85rem; }
+  .site-header img { height: 2rem; }
+  .theme-toggle { min-height: 2.15rem; padding: .4rem .6rem; font-size: .66rem; }
+  .font-clash.text-5xl,.font-clash.text-7xl {
+    font-size: clamp(2.5rem,12vw,3.6rem);
+    line-height: 1.02;
+    letter-spacing: .025em;
+  }
+  .font-clash.text-4xl { font-size: clamp(1.9rem,8.5vw,2.4rem); }
+  .font-clash.text-3xl { font-size: clamp(1.65rem,7vw,2rem); }
+  .min-w-\[130px\],.min-w-\[140px\],.min-w-\[170px\] { min-width: 0; }
 }
 
-@media (max-width: 639px) {
-  main {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
   }
-
-  .site-header img {
-    height: 2rem;
-  }
-
-  .theme-toggle {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.68rem;
-  }
-
-  .font-clash.text-5xl,
-  .font-clash.text-7xl {
-    font-size: clamp(2.35rem, 12vw, 3.5rem);
-    line-height: 1.05;
-    letter-spacing: 0.03em;
-  }
-
-  .font-clash.text-4xl {
-    font-size: clamp(1.8rem, 8vw, 2.25rem);
-  }
-
-  .font-clash.text-3xl {
-    font-size: clamp(1.6rem, 7vw, 1.9rem);
-  }
-
-  /* Search controls stack cleanly on small screens. */
-  form > div.flex.flex-col.sm\\:flex-row {
-    width: 100%;
-  }
-
-  /* Compact war/player rows can wrap rather than overflow the viewport. */
-  .min-w-\\[130px\\],
-  .min-w-\\[140px\\],
-  .min-w-\\[170px\\] {
-    min-width: 0;
-  }
-}
-
-@media (min-width: 640px) and (max-width: 1023px) {
-  main {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Syntax is completely correct. */
-@font-face {
-  font-family: 'Clash_Regular';
-  /* Make sure the file name matches exactly what you put in the public/fonts folder */
-  src: url('/fonts/Clash_Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
 }

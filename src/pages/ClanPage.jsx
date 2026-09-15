@@ -43,7 +43,7 @@ export default function ClanPage() {
   if (!clan) return null
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="mx-auto max-w-7xl py-2 sm:py-4 space-y-6 sm:space-y-8">
       <div className="flex justify-end">
         <Link
           to={`/clan/${encodeURIComponent(tag)}/wars`}

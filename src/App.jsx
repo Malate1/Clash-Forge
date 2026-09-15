@@ -12,7 +12,7 @@ export default function App() {
     <div className="app min-h-screen flex flex-col font-sans">
       <Navbar />
       
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/clan/:tag" element={<ClanPage />} />
@@ -42,8 +42,11 @@ export default function App() {
       </main>
 
       <footer className="bg-[#0a0d14] border-t border-slate-800/60 mt-auto">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 flex flex-col items-center justify-center text-center gap-3">
-          <p className="text-slate-500 text-xs md:text-sm font-medium tracking-wide">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-2">
+          <p className="font-clash text-xs uppercase tracking-[0.14em] text-slate-400">
+            Clash Forge
+          </p>
+          <p className="text-slate-500 text-xs font-medium tracking-wide">
             Not affiliated with Supercell. Data via the Clash of Clans API.
           </p>
         </div>
