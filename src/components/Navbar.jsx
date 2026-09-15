@@ -1,10 +1,21 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import SearchBar from './SearchBar.jsx'
 import headerLogo from '/assets/cf_header.png'
 
 export default function Navbar({ compactSearch = true }) {
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    return saved ? saved === 'dark' : true
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode)
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
+
   return (
-    <header className="border-b-2 border-slate-700/60 bg-[#0a0d14]/90 backdrop-blur-md sticky top-0 z-30 shadow-lg">
+    <header className="site-header border-b-2 sticky top-0 z-30 shadow-lg backdrop-blur-md">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3.5 flex items-center gap-6">
         <Link to="/" className="flex items-center gap-3 shrink-0 group focus-ring rounded-lg">
           <img
@@ -17,11 +28,18 @@ export default function Navbar({ compactSearch = true }) {
           </span>
         </Link>
         
-        {/* {compactSearch && (
-          <div className="flex-1 max-w-md ml-auto">
-            <SearchBar size="compact" />
-          </div>
-        )} */}
+        <div className="ml-auto flex items-center">
+          <button
+            type="button"
+            onClick={() => setDarkMode((value) => !value)}
+            className="theme-toggle focus-ring"
+            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={darkMode ? 'Light mode' : 'Dark mode'}
+          >
+            <span className="theme-toggle-icon" aria-hidden="true">{darkMode ? '☀' : '☾'}</span>
+            <span className="hidden sm:inline">{darkMode ? 'Light' : 'Dark'}</span>
+          </button>
+        </div>
       </div>
     </header>
   )
