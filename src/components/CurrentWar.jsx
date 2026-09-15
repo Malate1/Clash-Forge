@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { formatNumber, formatDateTime, warStateLabel } from '../utils/format.js'
+import WarAttackDetails from './WarAttackDetails.jsx'
 
 function SideCard({ side, accent = false }) {
   if (!side) return null
@@ -60,6 +62,7 @@ function SideCard({ side, accent = false }) {
 }
 
 export default function CurrentWar({ war, clanTag }) {
+  const [showAttacks, setShowAttacks] = useState(false)
   if (!war || war.state === 'notInWar') {
     return (
       <div className="bg-[#182030] border-2 border-slate-700/60 rounded-xl p-8 text-center text-slate-400 text-sm shadow-md">
@@ -92,6 +95,20 @@ export default function CurrentWar({ war, clanTag }) {
           </div>
           <SideCard side={them} />
         </div>
+
+        <div className="mt-4 flex justify-end border-t border-slate-700/50 pt-4">
+          <button
+            type="button"
+            onClick={() => setShowAttacks((value) => !value)}
+            className="rounded-xl bg-[#2a77f4] px-4 py-2 font-clash text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#3d85f5] focus-ring"
+          >
+            {showAttacks ? 'Hide attacks' : 'View attacks'}
+          </button>
+        </div>
+
+        {showAttacks && (
+          <WarAttackDetails war={war} onClose={() => setShowAttacks(false)} />
+        )}
 
         <div className="mt-4 pt-3 border-t border-slate-700/50 flex flex-wrap gap-4 text-xs font-mono text-slate-400">
           {war.preparationStartTime && (

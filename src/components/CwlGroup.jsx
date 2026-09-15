@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { getCwlWar, CocApiError } from '../api/coc.js'
 import { warStateLabel } from '../utils/format.js'
+import WarAttackDetails from './WarAttackDetails.jsx'
 
 function RoundWarRow({ war }) {
+  const [showAttacks, setShowAttacks] = useState(false)
   if (!war) return null
   return (
     <div className="bg-[#182030] border-2 border-slate-700/60 rounded-xl p-3 sm:p-4 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center justify-between gap-3 md:gap-4 hover:border-slate-500/80 transition-all duration-200 shadow-md overflow-hidden">
@@ -49,16 +51,31 @@ function RoundWarRow({ war }) {
         </div>
       </div>
 
-      {/* Destruction % */}
-      <div className="w-full md:w-auto md:ml-auto flex items-center justify-center md:justify-end gap-2 text-[10px] sm:text-xs font-mono text-slate-400 shrink-0 border-t md:border-t-0 md:border-l border-slate-700/50 pt-2 md:pt-0 md:pl-4 py-0.5 overflow-hidden">
-        <span className="text-slate-200 whitespace-nowrap">
-          {war.clan?.destructionPercentage?.toFixed?.(1) ?? 0}%
-        </span>
-        <span className="text-slate-600">vs</span>
-        <span className="text-slate-200 whitespace-nowrap">
-          {war.opponent?.destructionPercentage?.toFixed?.(1) ?? 0}%
-        </span>
+      {/* Destruction % + attack details action */}
+      <div className="w-full md:w-auto md:ml-auto flex items-center justify-between md:justify-end gap-3 text-[10px] sm:text-xs font-mono text-slate-400 shrink-0 border-t md:border-t-0 md:border-l border-slate-700/50 pt-2 md:pt-0 md:pl-4 py-0.5 overflow-hidden">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-200 whitespace-nowrap">
+            {war.clan?.destructionPercentage?.toFixed?.(1) ?? 0}%
+          </span>
+          <span className="text-slate-600">vs</span>
+          <span className="text-slate-200 whitespace-nowrap">
+            {war.opponent?.destructionPercentage?.toFixed?.(1) ?? 0}%
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAttacks((value) => !value)}
+          className="rounded-lg bg-[#2a77f4] px-3 py-1.5 font-clash text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#3d85f5] focus-ring"
+        >
+          {showAttacks ? 'Hide' : 'View'}
+        </button>
       </div>
+
+      {showAttacks && (
+        <div className="w-full md:basis-full">
+          <WarAttackDetails war={war} onClose={() => setShowAttacks(false)} />
+        </div>
+      )}
     </div>
   )
 }
