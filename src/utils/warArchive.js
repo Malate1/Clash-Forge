@@ -10,7 +10,8 @@ function safeParse(value, fallback) {
 
 function getArchive() {
   if (typeof window === 'undefined') return []
-  return safeParse(window.localStorage.getItem(STORAGE_KEY), [])
+  const parsed = safeParse(window.localStorage.getItem(STORAGE_KEY), [])
+  return Array.isArray(parsed) ? parsed : []
 }
 
 function saveArchive(items) {
