@@ -16,14 +16,14 @@ export default function Navbar({ compactSearch = true }) {
 
   return (
     <header className="site-header border-b-2 sticky top-0 z-30 shadow-lg backdrop-blur-md">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3.5 flex items-center gap-6">
+      <div className="mx-auto w-full max-w-6xl px-3 sm:px-6 py-3 flex items-center gap-3 sm:gap-6">
         <Link to="/" className="flex items-center gap-3 shrink-0 group focus-ring rounded-lg">
           <img
             src={headerLogo}
             alt="Logo"
             className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105"
           />
-          <span className="font-body text-[11px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline">
+          <span className="font-body text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 hidden xs:inline sm:inline">
             finds any clan or player
           </span>
         </Link>

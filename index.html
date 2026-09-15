@@ -15,6 +15,13 @@
     <meta name="author" content="ClashForge" />
 
     <!-- Favicon -->
+    <script>
+      (function () {
+        var savedTheme = localStorage.getItem('theme')
+        document.documentElement.classList.toggle('dark', savedTheme !== 'light')
+      })()
+    </script>
+
     <link rel="icon" type="image/png" href="/assets/cf.png" />
     <link rel="apple-touch-icon" href="/assets/cf.png" />
 
@@ -55,7 +62,7 @@
       rel="stylesheet"
     />
   </head>
-  <body class="bg-void">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

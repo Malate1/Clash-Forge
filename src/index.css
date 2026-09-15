@@ -11,17 +11,15 @@ html:not(.dark) {
 }
 
 body {
-  background-color: #f1f5f9;
+  background-color: #ffffff;
   color: #1e293b;
   transition: background-color 200ms ease, color 200ms ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Replaced the old gold/purple gradients with a subtle deep-blue radial glow typical of game stores */
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(42, 119, 244, 0.06), transparent 50%),
-    radial-gradient(circle at 100% 100%, rgba(255, 200, 0, 0.02), transparent 40%);
+  background-image: none;
   background-attachment: fixed;
-}
+  min-width: 320px;
+} 
 
 html.dark body {
   background-color: #0f141e;
@@ -101,13 +99,21 @@ html:not(.dark) [class~="bg-[#0d121d]"] {
   background-color: #f8fafc;
 }
 
-html:not(.dark) [class~="bg-[#242f45]"] {
+html:not(.dark) [class~="bg-[#242f45]"],
+html:not(.dark) [class~="bg-[#0a0d14]"],
+html:not(.dark) [class~="bg-[#121824]"] {
   background-color: #e2e8f0;
+}
+
+html:not(.dark) [class~="bg-[#0a0d14]"] {
+  background-color: #f8fafc;
 }
 
 html:not(.dark) [class~="bg-slate-800"],
 html:not(.dark) [class~="bg-slate-800/80"],
-html:not(.dark) [class~="bg-slate-800/50"] {
+html:not(.dark) [class~="bg-slate-800/50"],
+html:not(.dark) [class~="bg-[#0f141e]/30"],
+html:not(.dark) [class~="bg-[#0f1523]/50"] {
   background-color: #e2e8f0;
 }
 
@@ -144,7 +150,19 @@ html:not(.dark) [class~="hover:bg-slate-800/50"]:hover {
 }
 
 html:not(.dark) [class~="hover:bg-slate-700"]:hover { background-color: #cbd5e1; }
-html:not(.dark) [class~="hover:bg-[#242f45]/50"]:hover { background-color: #f1f5f9; }
+html:not(.dark) [class~="hover:bg-[#242f45]/50"]:hover,
+html:not(.dark) [class~="hover:bg-[#242f45]/50"]:hover {
+  background-color: #f1f5f9;
+}
+
+/* Footer and other full-width surfaces also follow the selected theme. */
+html:not(.dark) [class~="bg-[#0a0d14]"] {
+  background-color: #f8fafc;
+}
+
+html:not(.dark) [class~="border-slate-800/60"] {
+  border-color: #e2e8f0;
+}
 html:not(.dark) [class~="hover:text-slate-200"]:hover { color: #0f172a; }
 
 html:not(.dark) .bg-gradient-to-r.from-amber-500 {
@@ -228,6 +246,67 @@ html.dark .plate-sm {
   /* Updated to Clash Gold */
   outline: 2px solid #ffc800;
   outline-offset: 2px;
+}
+
+/* Keep wide data tables usable on phones: the table scrolls inside its container
+   instead of forcing the whole page to become wider than the viewport. */
+.overflow-x-auto {
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+img {
+  max-width: 100%;
+}
+
+@media (max-width: 639px) {
+  main {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .site-header img {
+    height: 2rem;
+  }
+
+  .theme-toggle {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.68rem;
+  }
+
+  .font-clash.text-5xl,
+  .font-clash.text-7xl {
+    font-size: clamp(2.35rem, 12vw, 3.5rem);
+    line-height: 1.05;
+    letter-spacing: 0.03em;
+  }
+
+  .font-clash.text-4xl {
+    font-size: clamp(1.8rem, 8vw, 2.25rem);
+  }
+
+  .font-clash.text-3xl {
+    font-size: clamp(1.6rem, 7vw, 1.9rem);
+  }
+
+  /* Search controls stack cleanly on small screens. */
+  form > div.flex.flex-col.sm\\:flex-row {
+    width: 100%;
+  }
+
+  /* Compact war/player rows can wrap rather than overflow the viewport. */
+  .min-w-\\[130px\\],
+  .min-w-\\[140px\\],
+  .min-w-\\[170px\\] {
+    min-width: 0;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
