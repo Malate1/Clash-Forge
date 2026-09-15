@@ -52,25 +52,25 @@ function Group({ title, items, kind, village = 'home', renderExtra, badge }) {
               className="bg-[#182030] border-2 border-slate-700/50 rounded-xl p-3 flex flex-col justify-between hover:border-slate-500/80 transition-colors shadow-md"
             >
               <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-2 min-w-0">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                  <span className="flex min-w-0 items-center gap-2">
                     <ItemIcon
                       kind={kind}
                       name={item.name}
                       village={village}
                       className="w-6 h-6 shrink-0 object-contain drop-shadow"
                     />
-                    <span className="text-slate-100 text-sm font-semibold truncate">
+                    <span className="min-w-0 truncate text-xs sm:text-sm text-slate-100 font-semibold" title={item.name}>
                       {item.name}
                     </span>
                   </span>
                   <span
-                    className={`font-clash text-lg shrink-0 ${
+                    className={`font-clash text-sm sm:text-lg shrink-0 whitespace-nowrap ${
                       maxed ? 'text-[#ffc800]' : 'text-slate-300'
                     }`}
                   >
                     {item.level}
-                    <span className="text-slate-500 text-xs font-sans">
+                    <span className="text-slate-500 text-[10px] sm:text-xs font-sans">
                       /{item.maxLevel}
                     </span>
                   </span>
@@ -89,16 +89,21 @@ function Group({ title, items, kind, village = 'home', renderExtra, badge }) {
 function EquipmentChips({ equipment }) {
   if (!equipment?.length) return null
   return (
-    <div className="mt-2.5 flex flex-wrap gap-1.5 pt-2 border-t border-slate-700/40">
+    <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-700/40">
       {equipment.map((eq) => (
         <span
           key={eq.name}
-          className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-fuchsia-300 bg-fuchsia-950/50 border border-fuchsia-700/40 px-2 py-0.5 rounded-md"
+          className="inline-flex items-center gap-1.5 min-w-0"
+          title={`${eq.name} · Level ${eq.level}/${eq.maxLevel}`}
         >
-          <ItemIcon kind="equipment" name={eq.name} className="w-3 h-3 shrink-0" />
-          <span className="truncate max-w-[80px]">{eq.name}</span>
-          <span className="text-fuchsia-400 font-mono">
-            {eq.level}/{eq.maxLevel}
+          <ItemIcon
+            kind="equipment"
+            name={eq.name}
+            className="w-5 h-5 shrink-0 object-contain drop-shadow"
+          />
+          <span className="font-clash text-[11px] sm:text-xs text-slate-300 whitespace-nowrap">
+            {eq.level}
+            <span className="text-slate-500 font-sans text-[9px] sm:text-[10px]">/{eq.maxLevel}</span>
           </span>
         </span>
       ))}
