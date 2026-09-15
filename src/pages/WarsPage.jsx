@@ -102,7 +102,9 @@ export default function WarsPage() {
           {activeTab === 'current' && (
             <CurrentWar war={data.current} clanTag={`#${normalizeTag(tag)}`} />
           )}
-          {activeTab === 'log' && <WarLog items={data.log.items} />}
+          {activeTab === 'log' && (
+            <WarLog items={data.log.items} clanTag={`#${normalizeTag(tag)}`} />
+          )}
           {activeTab === 'cwl' && <CwlGroup group={data.cwl} />}
         </div>
       )}

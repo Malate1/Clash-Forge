@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatNumber, formatDateTime, warStateLabel } from '../utils/format.js'
+import { archiveRegularWar } from '../utils/warArchive.js'
 import WarAttackDetails from './WarAttackDetails.jsx'
 
 function SideCard({ side, accent = false }) {
@@ -63,6 +64,10 @@ function SideCard({ side, accent = false }) {
 
 export default function CurrentWar({ war, clanTag }) {
   const [showAttacks, setShowAttacks] = useState(false)
+
+  useEffect(() => {
+    if (war && war.state !== 'notInWar') archiveRegularWar(war, clanTag)
+  }, [war, clanTag])
   if (!war || war.state === 'notInWar') {
     return (
       <div className="bg-[#182030] border-2 border-slate-700/60 rounded-xl p-8 text-center text-slate-400 text-sm shadow-md">
