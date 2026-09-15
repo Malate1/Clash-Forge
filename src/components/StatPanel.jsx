@@ -11,7 +11,7 @@ export default function StatPanel({ label, value, accent = false }) {
         {label}
       </p>
       <p
-        className={`font-clash text-2xl font-extrabold leading-none tracking-wide drop-shadow-sm ${
+        className={`font-clash text-1xl font-extrabold leading-none tracking-wide drop-shadow-sm ${
           accent ? 'text-[#ffc800]' : 'text-slate-100'
         }`}
       >
