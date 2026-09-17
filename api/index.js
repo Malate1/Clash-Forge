@@ -7,8 +7,8 @@ import { HttpsProxyAgent } from 'https-proxy-agent'
 const PORT = process.env.PORT || 5000
 const TOKEN = process.env.COC_API_TOKEN
 const FIXIE_URL = process.env.FIXIE_URL
-// const COC_BASE = 'https://api.clashofclans.com/v1'
-const COC_BASE = 'https://misfits.lovestoblog.com/upcoming_api'
+const COC_BASE = 'https://api.clashofclans.com/v1'
+// const COC_BASE = 'https://misfits.lovestoblog.com/upcoming_api'
 
 // Create a proxy agent if FIXIE_URL is provided
 const proxyAgent = FIXIE_URL ? new HttpsProxyAgent(FIXIE_URL) : null
