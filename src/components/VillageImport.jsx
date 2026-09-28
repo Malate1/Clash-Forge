@@ -252,7 +252,7 @@ function extractUpgrades(data) {
 
 function extractBuilderCount(data) {
   const directValue = firstValue(data, ['builders', 'builderCount', 'builder_count'])
-  if (Number.isFinite(Number(directValue))) return Number(directValue)
+  if (directValue !== null && Number.isFinite(Number(directValue))) return Number(directValue)
   return null
 }
 
@@ -679,7 +679,9 @@ function VillageDashboard({ village, stats, upgrades, builderCount }) {
       <div className="village-tracker-head">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <div className="village-th-badge">{stats?.townHall || '—'}</div>
+            <div className="village-th-badge">
+              <VillageItemIcon kind="building" name="Town Hall" level={stats?.townHall} fallback={stats?.townHall || '—'} />
+            </div>
             <div className="min-w-0">
               <p className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800]">Village Tracker</p>
               <h3 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide truncate">Town Hall {stats?.townHall || '—'} Village</h3>
@@ -749,12 +751,12 @@ function villageAssetUrl(kind, name, level) {
   return null
 }
 
-function VillageItemIcon({ kind, name, level }) {
+function VillageItemIcon({ kind, name, level, fallback }) {
   const [failed, setFailed] = useState(false)
   const src = villageAssetUrl(kind, name, level)
   return src && !failed
     ? <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
-    : <span aria-hidden="true">{kind === 'hero' ? '⚔' : kind === 'trap' ? '✹' : kind === 'spell' ? '✦' : '◆'}</span>
+    : <span aria-hidden="true">{fallback ?? (kind === 'hero' ? '⚔' : kind === 'trap' ? '✹' : kind === 'spell' ? '✦' : '◆')}</span>
 }
 
 function VillageItemGrid({ title, items, empty }) {
@@ -775,6 +777,7 @@ function InfoRow({ label, value }) {
 
 function BuilderUpgrades({ upgrades, builderCount }) {
   const now = Date.now()
+  const longestRemaining = Math.max(0, ...upgrades.map((upgrade) => upgrade.endAt ? upgrade.endAt - now : 0))
 
   return (
     <div className="village-upgrades-card">
@@ -782,8 +785,11 @@ function BuilderUpgrades({ upgrades, builderCount }) {
         <div>
           <p className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800] mb-1">Village Overview</p>
           <h3 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide">Current Builder Upgrades</h3>
+          <p className="mt-1 text-xs text-slate-400">Bars compare remaining timers; the export does not include elapsed upgrade progress.</p>
         </div>
-        {builderCount !== null && <span className="text-xs font-bold text-slate-400">{builderCount} builder{builderCount === 1 ? '' : 's'} detected</span>}
+        <span className="text-xs font-bold text-slate-400">
+          {builderCount === null ? 'Builder count not included in export' : `${builderCount} builder${builderCount === 1 ? '' : 's'} detected`}
+        </span>
       </div>
 
       {upgrades.length ? (
@@ -792,6 +798,9 @@ function BuilderUpgrades({ upgrades, builderCount }) {
             const remaining = upgrade.endAt ? Math.max(0, upgrade.endAt - now) : null
             const total = upgrade.startedAt && upgrade.endAt ? upgrade.endAt - upgrade.startedAt : null
             const progress = total ? Math.min(100, Math.max(0, ((now - upgrade.startedAt) / total) * 100)) : null
+            const relativeRemaining = remaining !== null && longestRemaining > 0
+              ? Math.round((remaining / longestRemaining) * 100)
+              : null
             return (
               <div key={upgrade.id} className="village-upgrade-row">
                 <div className="village-upgrade-icon"><VillageItemIcon
@@ -814,10 +823,10 @@ function BuilderUpgrades({ upgrades, builderCount }) {
                 </div>
 
                 <div className="mt-3 progress-track">
-                  {progress !== null && <div className="progress-fill" style={{ width: `${progress}%` }} />}
+                  {(progress !== null || relativeRemaining !== null) && <div className="progress-fill" style={{ width: `${progress ?? relativeRemaining}%` }} />}
                 </div>
                 <div className="mt-2 flex justify-between text-[11px] text-slate-500">
-                  <span>{progress !== null ? `${Math.round(progress)}% complete` : 'Active upgrade'}</span>
+                  <span>{progress !== null ? `${Math.round(progress)}% complete` : remaining !== null ? 'Remaining time (relative)' : 'Active upgrade'}</span>
                   {upgrade.endAt && <span>Finishes {new Date(upgrade.endAt).toLocaleString()}</span>}
                 </div></div>
               </div>
