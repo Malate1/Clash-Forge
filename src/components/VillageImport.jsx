@@ -64,7 +64,144 @@ function collectObjects(value, result = []) {
   return result
 }
 
+const EXPORT_COLLECTIONS = [
+  { key: 'buildings', label: 'Building' },
+  { key: 'traps', label: 'Trap' },
+  { key: 'heroes', label: 'Hero' },
+  { key: 'units', label: 'Troop' },
+  { key: 'spells', label: 'Spell' },
+  { key: 'siege_machines', label: 'Siege Machine' },
+  { key: 'pets', label: 'Pet' },
+]
+
+const DATA_NAMES = {
+  1000000: 'Army Camp',
+  1000001: 'Town Hall',
+  1000002: 'Elixir Collector',
+  1000003: 'Elixir Storage',
+  1000004: 'Gold Mine',
+  1000005: 'Gold Storage',
+  1000006: 'Barracks',
+  1000007: 'Laboratory',
+  1000008: 'Cannon',
+  1000009: 'Archer Tower',
+  1000010: 'Wall',
+  1000011: 'Wizard Tower',
+  1000012: 'Air Defense',
+  1000013: 'Mortar',
+  1000014: 'Clan Castle',
+  1000015: "Builder's Hut",
+  1000019: 'Hidden Tesla',
+  1000020: 'Spell Factory',
+  1000021: 'X-Bow',
+  1000023: 'Dark Elixir Drill',
+  1000024: 'Dark Elixir Storage',
+  1000026: 'Dark Barracks',
+  1000027: 'Inferno Tower',
+  1000028: 'Air Sweeper',
+  1000031: 'Eagle Artillery',
+  1000032: 'Bomb Tower',
+  1000059: 'Workshop',
+  1000067: 'Scattershot',
+  1000068: 'Pet House',
+  1000070: 'Blacksmith',
+  1000071: 'Hero Hall',
+  1000072: 'Spell Tower',
+  1000077: 'Monolith',
+  1000084: 'Multi-Archer Tower',
+  1000085: 'Ricochet Cannon',
+  1000089: 'Firespitter',
+  1000097: 'Crafted Defense',
+  12000000: 'Bomb',
+  12000001: 'Spring Trap',
+  12000002: 'Giant Bomb',
+  12000005: 'Air Bomb',
+  12000006: 'Seeking Air Mine',
+  12000008: 'Skeleton Trap',
+  12000016: 'Tornado Trap',
+  12000020: 'Giga Bomb',
+  28000000: 'Barbarian King',
+  28000001: 'Archer Queen',
+  28000002: 'Grand Warden',
+  28000004: 'Royal Champion',
+  28000006: 'Minion Prince',
+  28000007: 'Dragon Duke',
+  4000000: 'Barbarian',
+  4000001: 'Archer',
+  4000002: 'Goblin',
+  4000003: 'Giant',
+  4000004: 'Wall Breaker',
+  4000005: 'Balloon',
+  4000006: 'Wizard',
+  4000007: 'Healer',
+  4000008: 'Dragon',
+  4000009: 'P.E.K.K.A',
+  4000051: 'Wall Wrecker',
+  4000052: 'Battle Blimp',
+  4000062: 'Stone Slammer',
+  73000000: 'L.A.S.S.I',
+  73000001: 'Mighty Yak',
+  73000002: 'Electro Owl',
+  73000003: 'Unicorn',
+  73000004: 'Phoenix',
+  73000007: 'Poison Lizard',
+  73000008: 'Diggy',
+  73000009: 'Frosty',
+  73000010: 'Spirit Fox',
+  73000011: 'Angry Jelly',
+  73000016: 'Sneezy',
+  73000017: 'Greedy Raven',
+}
+
+function formatDataId(value) {
+  if (value === null || value === undefined) return 'Unknown'
+  return DATA_NAMES[value] || `Data #${value}`
+}
+
+function extractRealExportUpgrades(data) {
+  if (!data || typeof data !== 'object') return []
+
+  const exportTimestamp = toTimestamp(data.timestamp)
+  if (!exportTimestamp) return []
+
+  const upgrades = []
+
+  EXPORT_COLLECTIONS.forEach(({ key, label }) => {
+    const entries = Array.isArray(data[key]) ? data[key] : []
+
+    entries.forEach((entry, index) => {
+      const timer = Number(entry && entry.timer)
+      if (!Number.isFinite(timer) || timer <= 0) return
+
+      const endAt = exportTimestamp + (timer * 1000)
+      const level = firstValue(entry, ['lvl', 'level'])
+      const dataId = firstValue(entry, ['data', 'id'])
+
+      upgrades.push({
+        id: `${key}-${dataId}-${index}-${timer}`,
+        category: label,
+        name: formatDataId(dataId),
+        dataId,
+        level,
+        fromLevel: level,
+        toLevel: Number.isFinite(Number(level)) ? Number(level) + 1 : null,
+        timerSeconds: timer,
+        endAt,
+        startedAt: null,
+        progress: null,
+        supercharge: entry.supercharge === true,
+      })
+    })
+  })
+
+  return upgrades.sort((a, b) => a.endAt - b.endAt)
+}
+
 function extractUpgrades(data) {
+  const realExportUpgrades = extractRealExportUpgrades(data)
+  if (realExportUpgrades.length || Array.isArray(data?.buildings)) return realExportUpgrades
+
+  // Fallback for older/custom test data.
   const objects = collectObjects(data)
   const upgrades = []
   const seen = new Set()
@@ -93,6 +230,7 @@ function extractUpgrades(data) {
 
     upgrades.push({
       id: key,
+      category: 'Upgrade',
       name: label,
       level: firstValue(obj, ['level', 'currentLevel', 'current_level', 'toLevel', 'to_level']),
       fromLevel: firstValue(obj, ['fromLevel', 'from_level', 'levelFrom', 'level_from']),
@@ -112,11 +250,12 @@ function extractUpgrades(data) {
 }
 
 function extractBuilderCount(data) {
-  const objects = collectObjects(data)
-  for (const obj of objects) {
-    const value = firstValue(obj, ['builders', 'builderCount', 'builder_count', 'availableBuilders', 'available_builders'])
-    if (Number.isFinite(Number(value))) return Number(value)
-  }
+  // The village export does not provide a simple "builders: N" field.
+  // Keep support for custom/sample data, but don't invent a builder count
+  // when reading a real export.
+  const directValue = firstValue(data, ['builders', 'builderCount', 'builder_count'])
+  if (Number.isFinite(Number(directValue))) return Number(directValue)
+
   return null
 }
 
