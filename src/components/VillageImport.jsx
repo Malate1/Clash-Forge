@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Swal, toastError, toastSuccess } from '../utils/notifications.js'
 
 const STORAGE_KEY = 'clash-forge-village-export'
 const VILLAGES_STORAGE_KEY = 'clash-forge-village-exports'
@@ -478,7 +479,6 @@ export function useVillageExport() {
     }
     return { villages: [], selectedId: '' }
   })
-  const [error, setError] = useState(null)
   const selected = saved.villages.find((entry) => entry.id === saved.selectedId) || saved.villages[0] || null
   const village = selected?.data || null
   const importedAt = selected?.importedAt || null
@@ -490,14 +490,16 @@ export function useVillageExport() {
   function importVillage(value) {
     const cleaned = String(value || '').trim()
     if (!cleaned) {
-      setError('Paste your village export first.')
+      const message = 'Paste your village export first.'
+      toastError(message, 'Import failed')
       return false
     }
 
     try {
       const data = JSON.parse(cleaned)
       if (!data || typeof data !== 'object' || Array.isArray(data)) {
-        setError('Import one village JSON object at a time.')
+        const message = 'Import one village JSON object at a time.'
+        toastError(message, 'Import failed')
         return false
       }
       const now = Date.now()
@@ -516,15 +518,17 @@ export function useVillageExport() {
         localStorage.removeItem(STORAGE_KEY)
         localStorage.removeItem(`${STORAGE_KEY}:time`)
       } catch {
-        setError('Could not save this village in browser storage. Free some browser storage and try again.')
+        const message = 'Could not save this village in browser storage. Free some browser storage and try again.'
+        toastError(message, 'Import failed')
         return false
       }
 
       setSaved({ villages, selectedId: id })
-      setError(null)
+      toastSuccess(existingIndex < 0 ? 'Village data has been saved in this browser.' : 'Village data has been updated.', 'Import complete')
       return true
     } catch {
-      setError('That does not look like valid village JSON. Import one complete village export at a time.')
+      const message = 'That does not look like valid village JSON. Import one complete village export at a time.'
+      toastError(message, 'Invalid JSON')
       return false
     }
   }
@@ -542,11 +546,11 @@ export function useVillageExport() {
       localStorage.removeItem(STORAGE_KEY)
       localStorage.removeItem(`${STORAGE_KEY}:time`)
     } catch {
-      setError('Could not clear this village from browser storage. Please try again.')
+      const message = 'Could not clear this village from browser storage. Please try again.'
+      toastError(message, 'Clear failed')
       return false
     }
     setSaved({ villages, selectedId })
-    setError(null)
     return true
   }
 
@@ -558,7 +562,6 @@ export function useVillageExport() {
     upgrades,
     builderCount,
     importedAt,
-    error,
     importVillage,
     selectVillage,
     clearVillage,
@@ -594,7 +597,6 @@ export default function VillageImport() {
     upgrades,
     builderCount,
     importedAt,
-    error,
     importVillage,
     selectVillage,
     clearVillage,
@@ -619,6 +621,7 @@ export default function VillageImport() {
     } catch {
       setOpen(true)
       setText('')
+      toastError('Clipboard access is unavailable. Paste the JSON into the import box instead.', 'Could not read clipboard')
     } finally {
       setPasting(false)
     }
@@ -628,12 +631,24 @@ export default function VillageImport() {
     if (!selectedVillageId) return
     const selected = villages.find((entry) => entry.id === selectedVillageId)
     const label = selected ? villageLabel(selected, villages.indexOf(selected)) : 'this village'
-    if (!window.confirm(`Clear the uploaded JSON data for ${label}? Other saved villages will remain.`)) return
-    if (clearVillage(selectedVillageId)) {
+    Swal.fire({
+      title: `Clear ${label}?`,
+      text: 'Its uploaded JSON data will be removed. Other saved villages will remain.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Clear data',
+      cancelButtonText: 'Keep village',
+      confirmButtonColor: '#dc2626',
+      background: 'var(--surface-strong)',
+      color: 'var(--text)',
+      reverseButtons: true,
+    }).then((result) => {
+      if (!result.isConfirmed || !clearVillage(selectedVillageId)) return
       setText('')
       setOpen(villages.length === 1)
       setComparing(false)
-    }
+      toastSuccess(`${label} was removed from this browser.`, 'Village data cleared')
+    })
   }
 
   const stats = village ? extractVillageStats(village) : null
@@ -662,7 +677,7 @@ export default function VillageImport() {
               {pasting ? 'Reading Clipboard…' : 'Paste Village Data'}
             </button>
             {villages.length > 0 && (
-              <button onClick={() => { setOpen((value) => !value); setError(null) }} className="rounded-xl border border-slate-700/60 px-4 py-2.5 text-slate-300 text-xs font-bold uppercase tracking-wider hover:bg-slate-800/40">
+              <button onClick={() => setOpen((value) => !value)} className="rounded-xl border border-slate-700/60 px-4 py-2.5 text-slate-300 text-xs font-bold uppercase tracking-wider hover:bg-slate-800/40">
                 {open ? 'Close Import' : '+ Add Another Village'}
               </button>
             )}
@@ -691,7 +706,6 @@ export default function VillageImport() {
               </div>
             </div>
 
-            {error && <div className="rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</div>}
           </div>
         )}
 
