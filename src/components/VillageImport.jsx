@@ -38,6 +38,12 @@ function formatRemaining(ms) {
   return `${minutes}m`
 }
 
+function formatUpgradeCost(cost) {
+  if (cost === null || cost === undefined || cost === '') return null
+  const amount = Number(cost)
+  return Number.isFinite(amount) ? new Intl.NumberFormat().format(amount) : null
+}
+
 function labelForObject(obj) {
   const value = firstValue(obj, [
     'name', 'displayName', 'buildingName', 'unitName', 'typeName',
@@ -203,7 +209,7 @@ function formatDataId(value) {
 }
 
 const GAME_DATA_BASE = 'https://raw.githubusercontent.com/chiefpansancolt/clash-of-clans-data/main/data/home'
-const UPGRADE_TIME_CACHE_KEY = 'clash-forge-upgrade-time-cache:v1'
+const UPGRADE_TIME_CACHE_KEY = 'clash-forge-upgrade-data-cache:v2'
 const UPGRADE_TIME_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 const durationRequests = new Map()
 
@@ -245,7 +251,7 @@ function upgradeTargetTimeMilliseconds(duration) {
   )
 }
 
-function readCachedUpgradeTime(key) {
+function readCachedUpgradeData(key) {
   try {
     const cache = JSON.parse(localStorage.getItem(UPGRADE_TIME_CACHE_KEY) || '{}')
     return cache[key] || null
@@ -254,13 +260,13 @@ function readCachedUpgradeTime(key) {
   }
 }
 
-function saveCachedUpgradeTime(key, durationMs) {
+function saveCachedUpgradeData(key, data) {
   try {
     const cache = JSON.parse(localStorage.getItem(UPGRADE_TIME_CACHE_KEY) || '{}')
-    cache[key] = { durationMs, savedAt: Date.now() }
+    cache[key] = { data, savedAt: Date.now() }
     localStorage.setItem(UPGRADE_TIME_CACHE_KEY, JSON.stringify(cache))
   } catch {
-    // The duration remains usable for the current session if browser storage is full.
+    // The fetched upgrade details remain usable for the current session if storage is full.
   }
 }
 
@@ -283,7 +289,7 @@ function itemDataPathCandidates(upgrade) {
   return folders.map((folder) => `${GAME_DATA_BASE}/${folder}/${fileName}.json`)
 }
 
-async function fetchUpgradeTimeData(upgrade) {
+async function fetchOnlineUpgradeData(upgrade) {
   const candidates = itemDataPathCandidates(upgrade)
   const targetLevel = Number(upgrade.toLevel)
   if (!candidates.length || !Number.isFinite(targetLevel)) return null
@@ -295,8 +301,13 @@ async function fetchUpgradeTimeData(upgrade) {
       const item = await response.json()
       if (Number(item.dataId) !== Number(upgrade.dataId)) continue
       const target = item.levels?.find((level) => Number(level.level) === targetLevel)
-      const durationMs = upgradeTargetTimeMilliseconds(target?.buildTime || target?.upgradeTime || target?.researchTime)
-      if (durationMs !== null) return durationMs
+      if (!target) continue
+      return {
+        durationMs: upgradeTargetTimeMilliseconds(target.buildTime || target.upgradeTime || target.researchTime),
+        cost: target.buildCost ?? target.upgradeCost ?? target.researchCost ?? null,
+        costResource: target.buildCostResource || target.upgradeCostResource || target.researchCostResource || null,
+        maxLevel: Math.max(...item.levels.map((level) => Number(level.level)).filter(Number.isFinite)),
+      }
     } catch {
       // Try the next valid category path when a file is absent or unavailable.
     }
@@ -304,19 +315,19 @@ async function fetchUpgradeTimeData(upgrade) {
   return null
 }
 
-function getOnlineUpgradeTime(upgrade) {
+function getOnlineUpgradeData(upgrade) {
   const key = `${upgrade.dataId}:${upgrade.toLevel}`
-  const cached = readCachedUpgradeTime(key)
+  const cached = readCachedUpgradeData(key)
   if (cached && Date.now() - cached.savedAt < UPGRADE_TIME_CACHE_TTL) {
-    return Promise.resolve(cached.durationMs)
+    return Promise.resolve(cached.data)
   }
   if (durationRequests.has(key)) return durationRequests.get(key)
 
-  const request = fetchUpgradeTimeData(upgrade)
-    .then((durationMs) => {
-      if (durationMs !== null) saveCachedUpgradeTime(key, durationMs)
-      else if (cached) return cached.durationMs
-      return durationMs
+  const request = fetchOnlineUpgradeData(upgrade)
+    .then((data) => {
+      if (data !== null) saveCachedUpgradeData(key, data)
+      else if (cached) return cached.data
+      return data
     })
     .finally(() => durationRequests.delete(key))
   durationRequests.set(key, request)
@@ -942,19 +953,19 @@ function InfoRow({ label, value }) {
 
 function BuilderUpgrades({ upgrades, builderCount }) {
   const now = Date.now()
-  const [onlineUpgradeTimes, setOnlineUpgradeTimes] = useState({})
+  const [onlineUpgradeData, setOnlineUpgradeData] = useState({})
 
   useEffect(() => {
     let cancelled = false
-    setOnlineUpgradeTimes({})
-    Promise.all(upgrades.map(async (upgrade) => [upgrade.id, await getOnlineUpgradeTime(upgrade)]))
+    setOnlineUpgradeData({})
+    Promise.all(upgrades.map(async (upgrade) => [upgrade.id, await getOnlineUpgradeData(upgrade)]))
       .then((entries) => {
-        if (!cancelled) setOnlineUpgradeTimes(Object.fromEntries(entries))
+        if (!cancelled) setOnlineUpgradeData(Object.fromEntries(entries))
       })
     return () => { cancelled = true }
   }, [upgrades])
 
-  const waitingForOnlineTimes = upgrades.some((upgrade) => !Object.hasOwn(onlineUpgradeTimes, upgrade.id))
+  const waitingForOnlineData = upgrades.some((upgrade) => !Object.hasOwn(onlineUpgradeData, upgrade.id))
 
   return (
     <div className="village-upgrades-card">
@@ -969,7 +980,7 @@ function BuilderUpgrades({ upgrades, builderCount }) {
         </div>
         <div className="text-right text-xs font-bold text-slate-400">
           <p>{builderCount === null ? 'Builder count not included in export' : `${builderCount} builder${builderCount === 1 ? '' : 's'} detected`}</p>
-          {waitingForOnlineTimes && <p className="mt-1 text-slate-500">Loading upgrade times…</p>}
+          {waitingForOnlineData && <p className="mt-1 text-slate-500">Loading upgrade details…</p>}
         </div>
       </div>
 
@@ -978,7 +989,9 @@ function BuilderUpgrades({ upgrades, builderCount }) {
           {upgrades.map((upgrade) => {
             const remaining = upgrade.endAt ? Math.max(0, upgrade.endAt - now) : null
             const total = upgrade.startedAt && upgrade.endAt ? upgrade.endAt - upgrade.startedAt : null
-            const expectedDuration = onlineUpgradeTimes[upgrade.id]
+            const upgradeData = onlineUpgradeData[upgrade.id]
+            const expectedDuration = upgradeData?.durationMs
+            const formattedCost = formatUpgradeCost(upgradeData?.cost)
             const isEstimated = !total && Number.isFinite(expectedDuration) && expectedDuration > 0 && remaining !== null
             const progress = total
               ? Math.min(100, Math.max(0, ((now - upgrade.startedAt) / total) * 100))
@@ -998,6 +1011,14 @@ function BuilderUpgrades({ upgrades, builderCount }) {
                       <p className="text-xs text-slate-400 mt-1">
                         {upgrade.fromLevel ? `Level ${upgrade.fromLevel} → ` : ''}
                         {upgrade.toLevel ? `Level ${upgrade.toLevel}` : upgrade.level ? `Level ${upgrade.level}` : ''}
+                        {upgradeData?.maxLevel > 0 && <span> · Max {upgradeData.maxLevel}</span>}
+                      </p>
+                    )}
+                    {(expectedDuration > 0 || formattedCost !== null) && (
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        {expectedDuration > 0 && <span>Base time {formatRemaining(expectedDuration)}</span>}
+                        {expectedDuration > 0 && formattedCost !== null && <span> · </span>}
+                        {formattedCost !== null && <span>Cost {formattedCost}{upgradeData.costResource ? ` ${upgradeData.costResource}` : ''}</span>}
                       </p>
                     )}
                   </div>
