@@ -100,6 +100,7 @@ const DATA_NAMES = {
   1000026: 'Dark Barracks',
   1000027: 'Inferno Tower',
   1000028: 'Air Sweeper',
+  1000029: 'Dark Spell Factory',
   1000031: 'Eagle Artillery',
   1000032: 'Bomb Tower',
   1000059: 'Workshop',
@@ -109,6 +110,7 @@ const DATA_NAMES = {
   1000071: 'Hero Hall',
   1000072: 'Spell Tower',
   1000077: 'Monolith',
+  1000079: 'Multi-Gear Tower',
   1000084: 'Multi-Archer Tower',
   1000085: 'Ricochet Cannon',
   1000089: 'Firespitter',
@@ -137,12 +139,53 @@ const DATA_NAMES = {
   4000007: 'Healer',
   4000008: 'Dragon',
   4000009: 'P.E.K.K.A',
+  4000010: 'Minion',
+  4000011: 'Hog Rider',
+  4000012: 'Valkyrie',
+  4000013: 'Golem',
+  4000015: 'Witch',
+  4000017: 'Lava Hound',
+  4000022: 'Bowler',
+  4000023: 'Baby Dragon',
+  4000024: 'Miner',
   4000051: 'Wall Wrecker',
   4000052: 'Battle Blimp',
+  4000053: 'Yeti',
+  4000058: 'Ice Golem',
+  4000059: 'Electro Dragon',
   4000062: 'Stone Slammer',
+  4000065: 'Dragon Rider',
+  4000075: 'Siege Barracks',
+  4000082: 'Headhunter',
+  4000087: 'Log Launcher',
+  4000091: 'Flame Flinger',
+  4000092: 'Battle Drill',
+  4000095: 'Electro Titan',
+  4000097: 'Apprentice Warden',
+  4000110: 'Root Rider',
+  4000123: 'Druid',
+  4000132: 'Thrower',
+  4000135: 'Troop Launcher',
+  4000150: 'Furnace',
+  26000000: 'Lightning Spell',
+  26000001: 'Healing Spell',
+  26000002: 'Rage Spell',
+  26000003: 'Jump Spell',
+  26000005: 'Freeze Spell',
+  26000009: 'Poison Spell',
+  26000010: 'Earthquake Spell',
+  26000011: 'Haste Spell',
+  26000016: 'Clone Spell',
+  26000017: 'Skeleton Spell',
+  26000028: 'Bat Spell',
+  26000035: 'Invisibility Spell',
+  26000053: 'Recall Spell',
+  26000070: 'Overgrowth Spell',
+  26000098: 'Revive Spell',
+  26000109: 'Ice Block Spell',
   73000000: 'L.A.S.S.I',
-  73000001: 'Mighty Yak',
-  73000002: 'Electro Owl',
+  73000001: 'Electro Owl',
+  73000002: 'Mighty Yak',
   73000003: 'Unicorn',
   73000004: 'Phoenix',
   73000007: 'Poison Lizard',
@@ -157,6 +200,127 @@ const DATA_NAMES = {
 function formatDataId(value) {
   if (value === null || value === undefined) return 'Unknown'
   return DATA_NAMES[value] || `Data #${value}`
+}
+
+const GAME_DATA_BASE = 'https://raw.githubusercontent.com/chiefpansancolt/clash-of-clans-data/main/data/home'
+const UPGRADE_TIME_CACHE_KEY = 'clash-forge-upgrade-time-cache:v1'
+const UPGRADE_TIME_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
+const durationRequests = new Map()
+
+const DATA_FOLDERS = {
+  buildings: ['defenses', 'army-buildings', 'resource-buildings', 'town-hall', 'walls', 'crafted-defenses', 'other'],
+  traps: ['traps'],
+  heroes: ['heroes'],
+  units: ['troops'],
+  spells: ['spells'],
+  siege_machines: ['siege-machines'],
+  pets: ['pets'],
+}
+
+const BUILDING_FOLDER_BY_ID = {
+  1000000: 'army-buildings', 1000001: 'town-hall', 1000002: 'resource-buildings',
+  1000003: 'resource-buildings', 1000004: 'resource-buildings', 1000005: 'resource-buildings',
+  1000006: 'army-buildings', 1000007: 'army-buildings', 1000014: 'army-buildings',
+  1000020: 'army-buildings', 1000023: 'resource-buildings', 1000024: 'resource-buildings',
+  1000026: 'army-buildings', 1000029: 'army-buildings', 1000059: 'army-buildings',
+  1000068: 'army-buildings', 1000070: 'army-buildings', 1000071: 'army-buildings',
+  1000015: 'defenses', 1000008: 'defenses', 1000009: 'defenses', 1000011: 'defenses',
+  1000012: 'defenses', 1000013: 'defenses', 1000019: 'defenses', 1000021: 'defenses',
+  1000027: 'defenses', 1000028: 'defenses', 1000031: 'defenses', 1000032: 'defenses',
+  1000067: 'defenses', 1000072: 'defenses', 1000077: 'defenses', 1000079: 'defenses',
+  1000084: 'defenses', 1000085: 'defenses', 1000089: 'defenses', 1000097: 'crafted-defenses',
+  1000010: 'walls',
+}
+
+function upgradeTargetTimeMilliseconds(duration) {
+  if (!duration || typeof duration !== 'object') return null
+  const parts = ['days', 'hours', 'minutes', 'seconds']
+  const hasTime = parts.some((part) => Number.isFinite(Number(duration[part])) && Number(duration[part]) > 0)
+  if (!hasTime) return null
+  return (
+    (Number(duration.days) || 0) * 86400000 +
+    (Number(duration.hours) || 0) * 3600000 +
+    (Number(duration.minutes) || 0) * 60000 +
+    (Number(duration.seconds) || 0) * 1000
+  )
+}
+
+function readCachedUpgradeTime(key) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(UPGRADE_TIME_CACHE_KEY) || '{}')
+    return cache[key] || null
+  } catch {
+    return null
+  }
+}
+
+function saveCachedUpgradeTime(key, durationMs) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(UPGRADE_TIME_CACHE_KEY) || '{}')
+    cache[key] = { durationMs, savedAt: Date.now() }
+    localStorage.setItem(UPGRADE_TIME_CACHE_KEY, JSON.stringify(cache))
+  } catch {
+    // The duration remains usable for the current session if browser storage is full.
+  }
+}
+
+function itemDataPathCandidates(upgrade) {
+  const name = DATA_NAMES[upgrade.dataId]
+  if (!name) return []
+  const fileName = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[.'’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+  let folders = DATA_FOLDERS[upgrade.dataCollection] || []
+  if (upgrade.dataCollection === 'buildings' && BUILDING_FOLDER_BY_ID[upgrade.dataId]) {
+    const preferred = BUILDING_FOLDER_BY_ID[upgrade.dataId]
+    folders = [preferred, ...folders.filter((folder) => folder !== preferred)]
+  }
+  return folders.map((folder) => `${GAME_DATA_BASE}/${folder}/${fileName}.json`)
+}
+
+async function fetchUpgradeTimeData(upgrade) {
+  const candidates = itemDataPathCandidates(upgrade)
+  const targetLevel = Number(upgrade.toLevel)
+  if (!candidates.length || !Number.isFinite(targetLevel)) return null
+
+  for (const url of candidates) {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) continue
+      const item = await response.json()
+      if (Number(item.dataId) !== Number(upgrade.dataId)) continue
+      const target = item.levels?.find((level) => Number(level.level) === targetLevel)
+      const durationMs = upgradeTargetTimeMilliseconds(target?.buildTime || target?.upgradeTime || target?.researchTime)
+      if (durationMs !== null) return durationMs
+    } catch {
+      // Try the next valid category path when a file is absent or unavailable.
+    }
+  }
+  return null
+}
+
+function getOnlineUpgradeTime(upgrade) {
+  const key = `${upgrade.dataId}:${upgrade.toLevel}`
+  const cached = readCachedUpgradeTime(key)
+  if (cached && Date.now() - cached.savedAt < UPGRADE_TIME_CACHE_TTL) {
+    return Promise.resolve(cached.durationMs)
+  }
+  if (durationRequests.has(key)) return durationRequests.get(key)
+
+  const request = fetchUpgradeTimeData(upgrade)
+    .then((durationMs) => {
+      if (durationMs !== null) saveCachedUpgradeTime(key, durationMs)
+      else if (cached) return cached.durationMs
+      return durationMs
+    })
+    .finally(() => durationRequests.delete(key))
+  durationRequests.set(key, request)
+  return request
 }
 
 function extractRealExportUpgrades(data) {
@@ -181,6 +345,7 @@ function extractRealExportUpgrades(data) {
       upgrades.push({
         id: `${key}-${dataId}-${index}-${timer}`,
         category: label,
+        dataCollection: key,
         name: formatDataId(dataId),
         dataId,
         level,
@@ -777,6 +942,19 @@ function InfoRow({ label, value }) {
 
 function BuilderUpgrades({ upgrades, builderCount }) {
   const now = Date.now()
+  const [onlineUpgradeTimes, setOnlineUpgradeTimes] = useState({})
+
+  useEffect(() => {
+    let cancelled = false
+    setOnlineUpgradeTimes({})
+    Promise.all(upgrades.map(async (upgrade) => [upgrade.id, await getOnlineUpgradeTime(upgrade)]))
+      .then((entries) => {
+        if (!cancelled) setOnlineUpgradeTimes(Object.fromEntries(entries))
+      })
+    return () => { cancelled = true }
+  }, [upgrades])
+
+  const waitingForOnlineTimes = upgrades.some((upgrade) => !Object.hasOwn(onlineUpgradeTimes, upgrade.id))
 
   return (
     <div className="village-upgrades-card">
@@ -784,11 +962,15 @@ function BuilderUpgrades({ upgrades, builderCount }) {
         <div>
           <p className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800] mb-1">Village Overview</p>
           <h3 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide">Current Builder Upgrades</h3>
-          <p className="mt-1 text-xs text-slate-400">The export provides remaining time only, so completion percentages are unavailable.</p>
+          <p className="mt-1 text-xs text-slate-400">
+            Estimates use the <a href="https://github.com/chiefpansancolt/clash-of-clans-data" target="_blank" rel="noreferrer" className="text-slate-300 underline decoration-slate-600 underline-offset-2">online upgrade-time dataset</a>.
+            Boosts and event discounts can affect accuracy.
+          </p>
         </div>
-        <span className="text-xs font-bold text-slate-400">
-          {builderCount === null ? 'Builder count not included in export' : `${builderCount} builder${builderCount === 1 ? '' : 's'} detected`}
-        </span>
+        <div className="text-right text-xs font-bold text-slate-400">
+          <p>{builderCount === null ? 'Builder count not included in export' : `${builderCount} builder${builderCount === 1 ? '' : 's'} detected`}</p>
+          {waitingForOnlineTimes && <p className="mt-1 text-slate-500">Loading upgrade times…</p>}
+        </div>
       </div>
 
       {upgrades.length ? (
@@ -796,7 +978,13 @@ function BuilderUpgrades({ upgrades, builderCount }) {
           {upgrades.map((upgrade) => {
             const remaining = upgrade.endAt ? Math.max(0, upgrade.endAt - now) : null
             const total = upgrade.startedAt && upgrade.endAt ? upgrade.endAt - upgrade.startedAt : null
-            const progress = total ? Math.min(100, Math.max(0, ((now - upgrade.startedAt) / total) * 100)) : null
+            const expectedDuration = onlineUpgradeTimes[upgrade.id]
+            const isEstimated = !total && Number.isFinite(expectedDuration) && expectedDuration > 0 && remaining !== null
+            const progress = total
+              ? Math.min(100, Math.max(0, ((now - upgrade.startedAt) / total) * 100))
+              : isEstimated
+                ? Math.min(100, Math.max(0, ((expectedDuration - remaining) / expectedDuration) * 100))
+                : null
             return (
               <div key={upgrade.id} className="village-upgrade-row">
                 <div className="village-upgrade-icon"><VillageItemIcon
@@ -822,7 +1010,7 @@ function BuilderUpgrades({ upgrades, builderCount }) {
                   ? <div className="mt-3 progress-track"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
                   : <p className="mt-3 text-[10px] text-slate-500">Progress percentage unavailable for this export</p>}
                 <div className="mt-2 flex justify-between text-[11px] text-slate-500">
-                  <span>{progress !== null ? `${Math.round(progress)}% complete` : remaining !== null ? 'Active upgrade' : 'Progress unavailable'}</span>
+                  <span>{progress !== null ? `${isEstimated ? '~' : ''}${Math.round(progress)}% ${isEstimated ? 'estimated' : 'complete'}` : remaining !== null ? 'Progress unavailable' : 'Active upgrade'}</span>
                   {upgrade.endAt && <span>Finishes {new Date(upgrade.endAt).toLocaleString()}</span>}
                 </div></div>
               </div>
