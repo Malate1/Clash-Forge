@@ -123,11 +123,8 @@ export default function PlayerTroops({ player }) {
   // Categorize home village troops into distinct groups
   const pets = allHomeTroops.filter((t) => PET_NAMES.has(t.name))
   const siegeMachines = allHomeTroops.filter((t) => SIEGE_NAMES.has(t.name))
-  const superTroops = allHomeTroops.filter(
-    (t) => !PET_NAMES.has(t.name) && !SIEGE_NAMES.has(t.name) && t.name.startsWith('Super ')
-  )
   const standardTroops = allHomeTroops.filter(
-    (t) => !PET_NAMES.has(t.name) && !SIEGE_NAMES.has(t.name) && !t.name.startsWith('Super ')
+    (t) => !PET_NAMES.has(t.name) && !SIEGE_NAMES.has(t.name)
   )
 
   const hasAnything =
@@ -166,15 +163,6 @@ export default function PlayerTroops({ player }) {
         kind="troop"
         village="home"
       />
-
-      {/* Super Troops Separator */}
-      {/* <Group
-        title="Super Troops"
-        items={superTroops}
-        kind="troop"
-        village="home"
-        badge={superTroops.length}
-      /> */}
 
       {/* Siege Machines Separator */}
       <Group
