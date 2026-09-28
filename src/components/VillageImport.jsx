@@ -250,13 +250,36 @@ function extractUpgrades(data) {
 }
 
 function extractBuilderCount(data) {
-  // The village export does not provide a simple "builders: N" field.
-  // Keep support for custom/sample data, but don't invent a builder count
-  // when reading a real export.
   const directValue = firstValue(data, ['builders', 'builderCount', 'builder_count'])
   if (Number.isFinite(Number(directValue))) return Number(directValue)
-
   return null
+}
+
+function extractVillageStats(data) {
+  if (!data || typeof data !== 'object') return null
+  const buildings = Array.isArray(data.buildings) ? data.buildings : []
+  const heroes = Array.isArray(data.heroes) ? data.heroes : []
+  const units = Array.isArray(data.units) ? data.units : []
+  const spells = Array.isArray(data.spells) ? data.spells : []
+  const traps = Array.isArray(data.traps) ? data.traps : []
+  const pets = Array.isArray(data.pets) ? data.pets : []
+  const siege = Array.isArray(data.siege_machines) ? data.siege_machines : []
+
+  const townHall = buildings.find((entry) => Number(firstValue(entry, ['data', 'id'])) === 1000001)
+  const active = [...buildings, ...heroes, ...units, ...spells, ...traps, ...pets, ...siege]
+    .filter((entry) => Number(entry && entry.timer) > 0).length
+
+  return {
+    townHall: firstValue(townHall, ['lvl', 'level']),
+    buildings: buildings.length,
+    heroes: heroes.length,
+    troops: units.length,
+    spells: spells.length,
+    traps: traps.length,
+    pets: pets.length,
+    siege: siege.length,
+    active,
+  }
 }
 
 export function useVillageExport() {
@@ -333,7 +356,7 @@ function ImportSteps() {
 }
 
 export default function VillageImport() {
-  const { raw, upgrades, builderCount, importedAt, error, importVillage, clearVillage } = useVillageExport()
+  const { raw, village, upgrades, builderCount, importedAt, error, importVillage, clearVillage } = useVillageExport()
   const [open, setOpen] = useState(!raw)
   const [text, setText] = useState('')
   const [pasting, setPasting] = useState(false)
@@ -359,8 +382,10 @@ export default function VillageImport() {
     }
   }
 
+  const stats = village ? extractVillageStats(village) : null
+
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       <div className="plate p-5 sm:p-7 text-left overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
           <div>
@@ -425,16 +450,83 @@ export default function VillageImport() {
         )}
       </div>
 
-      {raw && <BuilderUpgrades upgrades={upgrades} builderCount={builderCount} />}
+      {raw && <VillageDashboard village={village} stats={stats} upgrades={upgrades} builderCount={builderCount} />}
     </section>
   )
+}
+
+function VillageDashboard({ village, stats, upgrades, builderCount }) {
+  const now = Date.now()
+  const tag = village?.tag || 'Unknown village'
+  const exportedAt = toTimestamp(village?.timestamp)
+  const categories = [
+    ['Buildings', stats?.buildings || 0, '🏰'],
+    ['Heroes', stats?.heroes || 0, '⚔️'],
+    ['Troops', stats?.troops || 0, '🪖'],
+    ['Spells', stats?.spells || 0, '✨'],
+    ['Traps', stats?.traps || 0, '💣'],
+    ['Pets', stats?.pets || 0, '🐾'],
+  ]
+
+  return (
+    <div className="village-tracker plate p-4 sm:p-6 text-left">
+      <div className="village-tracker-head">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <div className="village-th-badge">{stats?.townHall || '—'}</div>
+            <div className="min-w-0">
+              <p className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800]">Village Tracker</p>
+              <h3 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide truncate">Town Hall {stats?.townHall || '—'} Village</h3>
+              <p className="text-xs text-slate-400 mt-1 font-mono">{tag}</p>
+            </div>
+          </div>
+        </div>
+        <div className="text-left sm:text-right">
+          <p className="text-[11px] uppercase tracking-wider text-slate-500">Exported</p>
+          <p className="text-sm font-semibold text-slate-300">{exportedAt ? new Date(exportedAt).toLocaleString() : '—'}</p>
+          <p className="text-xs text-slate-500 mt-1">{stats?.active || 0} active upgrades</p>
+        </div>
+      </div>
+
+      <div className="village-tabs" role="tablist" aria-label="Village sections">
+        <span className="active">Overview</span><span>Upgrades</span><span>Buildings</span><span>Army</span>
+      </div>
+
+      <div className="village-stat-grid">
+        {categories.map(([label, count, icon]) => (
+          <div className="village-stat" key={label}>
+            <span className="village-stat-icon">{icon}</span>
+            <div><strong>{count}</strong><small>{label}</small></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 grid lg:grid-cols-[1.35fr_.65fr] gap-5">
+        <BuilderUpgrades upgrades={upgrades} builderCount={builderCount} />
+        <div className="village-side-card">
+          <div className="flex items-center justify-between mb-4"><h4 className="font-clash text-lg text-white uppercase tracking-wide">Village data</h4><span className="text-xs text-slate-500">Export</span></div>
+          <div className="space-y-3">
+            <InfoRow label="Town Hall" value={`Level ${stats?.townHall || '—'}`} />
+            <InfoRow label="Buildings" value={stats?.buildings || 0} />
+            <InfoRow label="Traps" value={stats?.traps || 0} />
+            <InfoRow label="Pets" value={stats?.pets || 0} />
+            <InfoRow label="Siege machines" value={stats?.siege || 0} />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InfoRow({ label, value }) {
+  return <div className="flex items-center justify-between gap-4 border-b border-slate-700/30 pb-2 last:border-0 last:pb-0"><span className="text-sm text-slate-400">{label}</span><strong className="text-sm text-white">{value}</strong></div>
 }
 
 function BuilderUpgrades({ upgrades, builderCount }) {
   const now = Date.now()
 
   return (
-    <div className="plate p-5 sm:p-7 text-left">
+    <div className="village-upgrades-card">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-5">
         <div>
           <p className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800] mb-1">Village Overview</p>
@@ -444,14 +536,15 @@ function BuilderUpgrades({ upgrades, builderCount }) {
       </div>
 
       {upgrades.length ? (
-        <div className="grid md:grid-cols-2 gap-3">
+        <div className="space-y-2">
           {upgrades.map((upgrade) => {
             const remaining = upgrade.endAt ? Math.max(0, upgrade.endAt - now) : null
             const total = upgrade.startedAt && upgrade.endAt ? upgrade.endAt - upgrade.startedAt : null
             const progress = total ? Math.min(100, Math.max(0, ((now - upgrade.startedAt) / total) * 100)) : null
             return (
-              <div key={upgrade.id} className="rounded-2xl border border-slate-700/50 bg-slate-900/20 p-4">
-                <div className="flex items-start justify-between gap-3">
+              <div key={upgrade.id} className="village-upgrade-row">
+                <div className="village-upgrade-icon">{upgrade.category === 'Hero' ? '⚔' : upgrade.category === 'Building' ? '🏰' : '✦'}</div>
+                <div className="flex-1 min-w-0"><div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-clash text-base sm:text-lg text-white uppercase tracking-wide truncate">{upgrade.name}</p>
                     {(upgrade.fromLevel || upgrade.toLevel || upgrade.level) && (
@@ -466,13 +559,13 @@ function BuilderUpgrades({ upgrades, builderCount }) {
                   </span>
                 </div>
 
-                <div className="mt-4 progress-track">
+                <div className="mt-3 progress-track">
                   {progress !== null && <div className="progress-fill" style={{ width: `${progress}%` }} />}
                 </div>
                 <div className="mt-2 flex justify-between text-[11px] text-slate-500">
                   <span>{progress !== null ? `${Math.round(progress)}% complete` : 'Active upgrade'}</span>
                   {upgrade.endAt && <span>Finishes {new Date(upgrade.endAt).toLocaleString()}</span>}
-                </div>
+                </div></div>
               </div>
             )
           })}
