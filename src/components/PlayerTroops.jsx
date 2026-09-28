@@ -1,4 +1,5 @@
 import ItemIcon from './ItemIcon.jsx'
+import { isSuperTroop } from '../utils/troops.js'
 
 // Known Hero Pets (from Supercell API player.troops array)
 const PET_NAMES = new Set([
@@ -115,8 +116,8 @@ export default function PlayerTroops({ player }) {
   const homeHeroes = player.heroes?.filter((h) => h.village === 'home') || []
   const builderHeroes = player.heroes?.filter((h) => h.village === 'builderBase') || []
   
-  const allHomeTroops = player.troops?.filter((t) => t.village === 'home') || []
-  const builderTroops = player.troops?.filter((t) => t.village === 'builderBase') || []
+  const allHomeTroops = player.troops?.filter((t) => t.village === 'home' && !isSuperTroop(t)) || []
+  const builderTroops = player.troops?.filter((t) => t.village === 'builderBase' && !isSuperTroop(t)) || []
   const spells = player.spells?.filter((s) => s.village === 'home') || []
   const heroEquipment = player.heroEquipment || []
 

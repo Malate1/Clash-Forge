@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import ItemIcon from './ItemIcon.jsx'
+import { isSuperTroop } from '../utils/troops.js'
 
 const FILTERS = ['All', 'Heroes', 'Troops', 'Spells', 'Equipment']
 
@@ -8,7 +9,7 @@ export default function UpgradeGapPlanner({ player }) {
   const gaps = useMemo(() => {
     const categories = [
       ['Heroes', player.heroes || [], 'hero'],
-      ['Troops', player.troops || [], 'troop'],
+      ['Troops', (player.troops || []).filter((troop) => !isSuperTroop(troop)), 'troop'],
       ['Spells', player.spells || [], 'spell'],
       ['Equipment', player.heroEquipment || [], 'equipment'],
     ]

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { formatNumber } from '../utils/format.js'
+import { isSuperTroop } from '../utils/troops.js'
 
 const KEY_PREFIX = 'clash-forge:player-progress:v1:'
 
@@ -13,7 +14,8 @@ function readSnapshots(tag) {
 }
 
 function playerMetrics(player) {
-  const items = [...(player.heroes || []), ...(player.troops || []), ...(player.spells || []), ...(player.heroEquipment || [])]
+  const troops = (player.troops || []).filter((troop) => !isSuperTroop(troop))
+  const items = [...(player.heroes || []), ...troops, ...(player.spells || []), ...(player.heroEquipment || [])]
   const achievements = player.achievements || []
   return {
     trophies: Number(player.trophies || 0),
