@@ -79,6 +79,12 @@ export default function CurrentWar({ war, clanTag }) {
   const isClanUs = war.clan?.tag === clanTag
   const us = isClanUs ? war.clan : war.opponent
   const them = isClanUs ? war.opponent : war.clan
+  const attacksPerMember = war.attacksPerMember ?? 2
+  const roster = us?.members || []
+  const totalAttacks = roster.length * attacksPerMember
+  const usedAttacks = roster.reduce((sum, member) => sum + (member.attacks?.length || 0), 0)
+  const remainingAttacks = Math.max(0, totalAttacks - usedAttacks)
+  const yetToAttack = roster.filter((member) => !(member.attacks?.length)).length
 
   return (
     <div className="space-y-6">
@@ -91,6 +97,13 @@ export default function CurrentWar({ war, clanTag }) {
           <span className="text-slate-300 text-xs font-mono bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
             Team size {war.teamSize} · {war.attacksPerMember ?? 2} attacks each
           </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <WarProgressStat label="Attacks used" value={`${usedAttacks} / ${totalAttacks}`} />
+          <WarProgressStat label="Attacks remaining" value={remainingAttacks} />
+          <WarProgressStat label="Not attacked" value={yetToAttack} />
+          <WarProgressStat label="Roster" value={roster.length} />
         </div>
 
         <div className="flex flex-wrap gap-3 items-stretch">
@@ -185,7 +198,7 @@ export default function CurrentWar({ war, clanTag }) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-400">
-                        {m.attacks?.length ?? 0}/{war.attacksPerMember ?? 2}
+                        {m.attacks?.length ?? 0}/{attacksPerMember}
                       </td>
                       <td className="px-4 py-3 text-[#ffc800] font-bold text-sm">
                         {best ? `${best.stars} ★` : '—'}
@@ -202,4 +215,11 @@ export default function CurrentWar({ war, clanTag }) {
       )}
     </div>
   )
+}
+
+function WarProgressStat({ label, value }) {
+  return <div className="rounded-lg border border-slate-700/40 bg-slate-900/30 px-3 py-2">
+    <p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p>
+    <p className="mt-0.5 font-clash text-lg text-slate-100">{value}</p>
+  </div>
 }

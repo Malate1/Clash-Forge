@@ -58,6 +58,7 @@ async function forward(res, path) {
 // Routes
 app.get(['/api/clans/:tag', '/clans/:tag'], (req, res) => forward(res, `/clans/${encodedTag(req.params.tag)}`))
 app.get(['/api/clans/:tag/members', '/clans/:tag/members'], (req, res) => forward(res, `/clans/${encodedTag(req.params.tag)}/members?limit=50`))
+app.get(['/api/clans/:tag/capitalraidseasons', '/clans/:tag/capitalraidseasons'], (req, res) => forward(res, `/clans/${encodedTag(req.params.tag)}/capitalraidseasons?limit=10`))
 app.get(['/api/clans/:tag/currentwar', '/clans/:tag/currentwar'], (req, res) => forward(res, `/clans/${encodedTag(req.params.tag)}/currentwar`))
 app.get(['/api/clans/:tag/warlog', '/clans/:tag/warlog'], (req, res) => forward(res, `/clans/${encodedTag(req.params.tag)}/warlog?limit=25`))
 app.get(['/api/clans/:tag/currentwar/leaguegroup', '/clans/:tag/currentwar/leaguegroup'], (req, res) => forward(res, `/clans/${encodedTag(req.params.tag)}/currentwar/leaguegroup`))

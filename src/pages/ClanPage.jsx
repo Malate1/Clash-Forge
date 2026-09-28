@@ -6,6 +6,8 @@ import ClanCapital from '../components/ClanCapital.jsx'
 import MemberTable from '../components/MemberTable.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
+import CapitalRaidHistory from '../components/CapitalRaidHistory.jsx'
+import RosterReadiness from '../components/RosterReadiness.jsx'
 
 export default function ClanPage() {
   const { tag } = useParams()
@@ -54,6 +56,8 @@ export default function ClanPage() {
       </div>
       <ClanHeader clan={clan} />
       <ClanCapital clanCapital={clan.clanCapital} />
+      <CapitalRaidHistory clanTag={tag} />
+      <RosterReadiness clan={clan} members={members || []} />
       <div className="space-y-4">
         <h2 className="font-clash text-2xl text-[#ffc800] uppercase tracking-wide drop-shadow-sm">
           Roster

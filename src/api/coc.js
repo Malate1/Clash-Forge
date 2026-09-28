@@ -105,6 +105,10 @@ export function getClanMembers(tag) {
   return request(`/clans/${encodeURIComponent(normalizeTag(tag))}/members`)
 }
 
+export function getCapitalRaidSeasons(tag) {
+  return request(`/clans/${encodeURIComponent(normalizeTag(tag))}/capitalraidseasons?limit=10`)
+}
+
 export function getCurrentWar(tag) {
   return request(`/clans/${encodeURIComponent(normalizeTag(tag))}/currentwar`)
 }

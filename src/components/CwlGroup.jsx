@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getCwlWar, CocApiError } from '../api/coc.js'
 import { warStateLabel } from '../utils/format.js'
 import WarAttackDetails from './WarAttackDetails.jsx'
+import { useMemo } from 'react'
 
 function RoundWarRow({ war }) {
   const [showAttacks, setShowAttacks] = useState(false)
@@ -80,7 +81,7 @@ function RoundWarRow({ war }) {
   )
 }
 
-function Round({ index, warTags }) {
+function Round({ index, warTags, onWarsLoaded }) {
   const [wars, setWars] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -93,6 +94,7 @@ function Round({ index, warTags }) {
     try {
       const results = await Promise.all(realTags.map((tag) => getCwlWar(tag)))
       setWars(results)
+      onWarsLoaded(index, results)
     } catch (err) {
       setError(err instanceof CocApiError ? err.message : 'Could not load this round.')
     } finally {
@@ -132,7 +134,26 @@ function Round({ index, warTags }) {
   )
 }
 
-export default function CwlGroup({ group }) {
+export default function CwlGroup({ group, clanTag }) {
+  const [roundWars, setRoundWars] = useState({})
+  const participation = useMemo(() => {
+    const stats = new Map()
+    Object.values(roundWars).flat().forEach((war) => {
+      const ownSide = [war.clan, war.opponent].find((side) => side?.tag === clanTag)
+      if (!ownSide) return
+      ;(ownSide.members || []).forEach((member) => {
+        const row = stats.get(member.tag) || { ...member, roundsPlayed: 0, attacks: 0, stars: 0, destruction: 0 }
+        const attacks = member.attacks || []
+        if (attacks.length) row.roundsPlayed += 1
+        row.attacks += attacks.length
+        row.stars += attacks.reduce((sum, attack) => sum + (attack.stars || 0), 0)
+        row.destruction += attacks.reduce((sum, attack) => sum + (attack.destructionPercentage || 0), 0)
+        stats.set(member.tag, row)
+      })
+    })
+    return [...stats.values()].sort((a, b) => b.roundsPlayed - a.roundsPlayed || b.stars - a.stars)
+  }, [roundWars, clanTag])
+
   if (!group || group.state === 'notInWar') {
     return (
       <div className="bg-[#182030] border-2 border-slate-700/60 rounded-xl p-8 text-center text-slate-400 text-sm shadow-md">
@@ -179,9 +200,28 @@ export default function CwlGroup({ group }) {
       {/* Rounds Section */}
       <div className="space-y-4">
         {group.rounds?.map((round, i) => (
-          <Round key={i} index={i} warTags={round.warTags || []} />
+          <Round key={i} index={i} warTags={round.warTags || []} onWarsLoaded={(roundIndex, wars) => setRoundWars((current) => ({ ...current, [roundIndex]: wars }))} />
         ))}
       </div>
+
+      {participation.length > 0 && <div className="rounded-2xl border border-slate-700/50 bg-[#182030] p-5 shadow-md">
+        <h3 className="font-clash text-xl uppercase tracking-wide text-slate-100">CWL player participation</h3>
+        <p className="mt-1 mb-4 text-xs text-slate-400">Totals from rounds loaded above. Unloaded rounds are not included.</p>
+        <div className="overflow-x-auto rounded-xl border border-slate-700/50">
+          <table className="w-full min-w-[620px] text-sm">
+            <thead><tr className="bg-slate-900/60 text-left text-[11px] uppercase tracking-wider text-slate-400">
+              <th className="px-4 py-3">Player</th><th className="px-4 py-3 text-right">Rounds played</th><th className="px-4 py-3 text-right">Attacks</th><th className="px-4 py-3 text-right">Stars</th><th className="px-4 py-3 text-right">Avg. destruction</th>
+            </tr></thead>
+            <tbody className="divide-y divide-slate-700/40">{participation.map((member) => <tr key={member.tag}>
+              <td className="px-4 py-3 font-semibold text-slate-200">{member.name}</td>
+              <td className="px-4 py-3 text-right text-slate-300">{member.roundsPlayed}</td>
+              <td className="px-4 py-3 text-right text-slate-300">{member.attacks}</td>
+              <td className="px-4 py-3 text-right font-clash text-[#ffc800]">{member.stars}</td>
+              <td className="px-4 py-3 text-right text-slate-300">{member.attacks ? `${(member.destruction / member.attacks).toFixed(1)}%` : '—'}</td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+      </div>}
     </div>
   )
 }

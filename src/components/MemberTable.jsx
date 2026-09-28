@@ -12,7 +12,8 @@ const COLUMNS = [
   { key: 'trophies', label: 'Trophies' },
   { key: 'builderBaseTrophies', label: 'Builder Trophies' },
   { key: 'donations', label: 'Donated' },
-  { key: 'donationsReceived', label: 'Received' }
+  { key: 'donationsReceived', label: 'Received' },
+  { key: 'netDonations', label: 'Net donations' }
 ]
 
 export default function MemberTable({ members = [] }) {
@@ -39,6 +40,10 @@ export default function MemberTable({ members = [] }) {
     copy.sort((a, b) => {
       let av = a[sortKey] ?? 0
       let bv = b[sortKey] ?? 0
+      if (sortKey === 'netDonations') {
+        av = (a.donations || 0) - (a.donationsReceived || 0)
+        bv = (b.donations || 0) - (b.donationsReceived || 0)
+      }
       if (sortKey === 'leagueTier') {
         av = a.leagueTier?.name || ''
         bv = b.leagueTier?.name || ''
@@ -201,6 +206,9 @@ export default function MemberTable({ members = [] }) {
                   </td>
                   <td className="px-4 py-3.5 text-slate-300 font-semibold">
                     {formatNumber(m.donationsReceived)}
+                  </td>
+                  <td className={`px-4 py-3.5 font-semibold ${(m.donations || 0) - (m.donationsReceived || 0) < 0 ? 'text-amber-300' : 'text-slate-300'}`}>
+                    {formatNumber((m.donations || 0) - (m.donationsReceived || 0))}
                   </td>
                 </tr>
               ))
