@@ -129,4 +129,12 @@ export function getPlayer(tag) {
   return request(`/players/${encodeURIComponent(normalizeTag(tag))}`)
 }
 
+export function getPlayerLeagueHistory(tag) {
+  return request(`/players/${encodeURIComponent(normalizeTag(tag))}/leaguehistory`)
+}
+
+export function getLeagueTier(id) {
+  return request(`/leaguetiers/${encodeURIComponent(id)}`)
+}
+
 export { CocApiError }

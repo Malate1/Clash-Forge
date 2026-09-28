@@ -64,6 +64,8 @@ app.get(['/api/clans/:tag/warlog', '/clans/:tag/warlog'], (req, res) => forward(
 app.get(['/api/clans/:tag/currentwar/leaguegroup', '/clans/:tag/currentwar/leaguegroup'], (req, res) => forward(res, `/clans/${encodedTag(req.params.tag)}/currentwar/leaguegroup`))
 app.get(['/api/wars/:warTag', '/wars/:warTag'], (req, res) => forward(res, `/clanwarleagues/wars/${encodedTag(req.params.warTag)}`))
 app.get(['/api/players/:tag', '/players/:tag'], (req, res) => forward(res, `/players/${encodedTag(req.params.tag)}`))
+app.get(['/api/players/:tag/leaguehistory', '/players/:tag/leaguehistory'], (req, res) => forward(res, `/players/${encodedTag(req.params.tag)}/leaguehistory`))
+app.get(['/api/leaguetiers/:id', '/leaguetiers/:id'], (req, res) => forward(res, `/leaguetiers/${encodeURIComponent(req.params.id)}`))
 app.get(['/api/health', '/health'], (req, res) => res.json({ ok: true }))
 
 export default app

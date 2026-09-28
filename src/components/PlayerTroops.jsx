@@ -124,7 +124,7 @@ export default function PlayerTroops({ player }) {
   const pets = allHomeTroops.filter((t) => PET_NAMES.has(t.name))
   const siegeMachines = allHomeTroops.filter((t) => SIEGE_NAMES.has(t.name))
   const standardTroops = allHomeTroops.filter(
-    (t) => !PET_NAMES.has(t.name) && !SIEGE_NAMES.has(t.name)
+    (t) => !PET_NAMES.has(t.name) && !SIEGE_NAMES.has(t.name) && !t.name.startsWith('Super ')
   )
 
   const hasAnything =

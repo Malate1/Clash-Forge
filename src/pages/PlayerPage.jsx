@@ -8,6 +8,7 @@ import LoadingState from '../components/LoadingState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import PlayerProgressHistory from '../components/PlayerProgressHistory.jsx'
 import UpgradeGapPlanner from '../components/UpgradeGapPlanner.jsx'
+import PreviousRankedLeague from '../components/PreviousRankedLeague.jsx'
 
 export default function PlayerPage() {
   const { tag } = useParams()
@@ -38,6 +39,7 @@ export default function PlayerPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 space-y-8 animate-in fade-in duration-300">
       <PlayerHeader player={player} />
+      <PreviousRankedLeague player={player} />
       <PlayerProgressHistory player={player} />
       <UpgradeGapPlanner player={player} />
       <PlayerTroops player={player} />
