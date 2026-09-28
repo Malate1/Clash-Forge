@@ -777,7 +777,6 @@ function InfoRow({ label, value }) {
 
 function BuilderUpgrades({ upgrades, builderCount }) {
   const now = Date.now()
-  const longestRemaining = Math.max(0, ...upgrades.map((upgrade) => upgrade.endAt ? upgrade.endAt - now : 0))
 
   return (
     <div className="village-upgrades-card">
@@ -785,7 +784,7 @@ function BuilderUpgrades({ upgrades, builderCount }) {
         <div>
           <p className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800] mb-1">Village Overview</p>
           <h3 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide">Current Builder Upgrades</h3>
-          <p className="mt-1 text-xs text-slate-400">Bars compare remaining timers; the export does not include elapsed upgrade progress.</p>
+          <p className="mt-1 text-xs text-slate-400">The export provides remaining time only, so completion percentages are unavailable.</p>
         </div>
         <span className="text-xs font-bold text-slate-400">
           {builderCount === null ? 'Builder count not included in export' : `${builderCount} builder${builderCount === 1 ? '' : 's'} detected`}
@@ -798,9 +797,6 @@ function BuilderUpgrades({ upgrades, builderCount }) {
             const remaining = upgrade.endAt ? Math.max(0, upgrade.endAt - now) : null
             const total = upgrade.startedAt && upgrade.endAt ? upgrade.endAt - upgrade.startedAt : null
             const progress = total ? Math.min(100, Math.max(0, ((now - upgrade.startedAt) / total) * 100)) : null
-            const relativeRemaining = remaining !== null && longestRemaining > 0
-              ? Math.round((remaining / longestRemaining) * 100)
-              : null
             return (
               <div key={upgrade.id} className="village-upgrade-row">
                 <div className="village-upgrade-icon"><VillageItemIcon
@@ -822,11 +818,11 @@ function BuilderUpgrades({ upgrades, builderCount }) {
                   </span>
                 </div>
 
-                <div className="mt-3 progress-track">
-                  {(progress !== null || relativeRemaining !== null) && <div className="progress-fill" style={{ width: `${progress ?? relativeRemaining}%` }} />}
-                </div>
+                {progress !== null
+                  ? <div className="mt-3 progress-track"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
+                  : <p className="mt-3 text-[10px] text-slate-500">Progress percentage unavailable for this export</p>}
                 <div className="mt-2 flex justify-between text-[11px] text-slate-500">
-                  <span>{progress !== null ? `${Math.round(progress)}% complete` : remaining !== null ? 'Remaining time (relative)' : 'Active upgrade'}</span>
+                  <span>{progress !== null ? `${Math.round(progress)}% complete` : remaining !== null ? 'Active upgrade' : 'Progress unavailable'}</span>
                   {upgrade.endAt && <span>Finishes {new Date(upgrade.endAt).toLocaleString()}</span>}
                 </div></div>
               </div>
