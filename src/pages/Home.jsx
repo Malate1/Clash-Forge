@@ -1,4 +1,5 @@
 import SearchBar from '../components/SearchBar.jsx'
+import VillageImport from '../components/VillageImport.jsx'
 
 export default function Home() {
   return (
@@ -23,6 +24,10 @@ export default function Home() {
 
       <div className="max-w-2xl mx-auto rounded-[1.4rem] border border-slate-700/50 bg-[#182030] p-3 sm:p-4 shadow-xl">
         <SearchBar size="hero" />
+      </div>
+
+      <div className="mt-10">
+        <VillageImport />
       </div>
 
       <div className="mt-16 grid sm:grid-cols-2 gap-4 text-left">
