@@ -533,6 +533,23 @@ export function useVillageExport() {
     setSaved((current) => ({ ...current, selectedId: id }))
   }
 
+  function clearVillage(id) {
+    const villages = saved.villages.filter((entry) => entry.id !== id)
+    const selectedId = saved.selectedId === id ? villages[0]?.id || '' : saved.selectedId
+    try {
+      if (villages.length) localStorage.setItem(VILLAGES_STORAGE_KEY, JSON.stringify(villages))
+      else localStorage.removeItem(VILLAGES_STORAGE_KEY)
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(`${STORAGE_KEY}:time`)
+    } catch {
+      setError('Could not clear this village from browser storage. Please try again.')
+      return false
+    }
+    setSaved({ villages, selectedId })
+    setError(null)
+    return true
+  }
+
   return {
     raw,
     village,
@@ -544,6 +561,7 @@ export function useVillageExport() {
     error,
     importVillage,
     selectVillage,
+    clearVillage,
   }
 }
 
@@ -579,6 +597,7 @@ export default function VillageImport() {
     error,
     importVillage,
     selectVillage,
+    clearVillage,
   } = useVillageExport()
   const [open, setOpen] = useState(!raw)
   const [text, setText] = useState('')
@@ -602,6 +621,18 @@ export default function VillageImport() {
       setText('')
     } finally {
       setPasting(false)
+    }
+  }
+
+  function clearSelectedVillage() {
+    if (!selectedVillageId) return
+    const selected = villages.find((entry) => entry.id === selectedVillageId)
+    const label = selected ? villageLabel(selected, villages.indexOf(selected)) : 'this village'
+    if (!window.confirm(`Clear the uploaded JSON data for ${label}? Other saved villages will remain.`)) return
+    if (clearVillage(selectedVillageId)) {
+      setText('')
+      setOpen(villages.length === 1)
+      setComparing(false)
     }
   }
 
@@ -688,12 +719,18 @@ export default function VillageImport() {
                 </button>
               })}
             </div>
-            {villages.length > 1 && (
-              <button type="button" onClick={() => setComparing((value) => !value)} aria-pressed={comparing}
-                className={`rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide ${comparing ? 'border-[#ffc800]/50 bg-amber-500/10 text-[#ffc800]' : 'border-slate-700 text-slate-300 hover:bg-slate-800'}`}>
-                {comparing ? 'View Selected Village' : 'Compare Villages'}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={clearSelectedVillage}
+                className="rounded-lg border border-red-500/30 px-4 py-2 text-xs font-black uppercase tracking-wide text-red-300 hover:bg-red-500/10">
+                Clear Selected Data
               </button>
-            )}
+              {villages.length > 1 && (
+                <button type="button" onClick={() => setComparing((value) => !value)} aria-pressed={comparing}
+                  className={`rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide ${comparing ? 'border-[#ffc800]/50 bg-amber-500/10 text-[#ffc800]' : 'border-slate-700 text-slate-300 hover:bg-slate-800'}`}>
+                  {comparing ? 'View Selected Village' : 'Compare Villages'}
+                </button>
+              )}
+            </div>
           </div>
 
           {comparing
