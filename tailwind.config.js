@@ -22,9 +22,11 @@ export default {
         supercell: '#2a77f4',   // Iconic Supercell blue button color
       },
       fontFamily: {
-        display: ['"Big Shoulders Display"', 'sans-serif'], // Kept as fallback
-        body: ['Inter', 'sans-serif'],                      // Kept as fallback
-        clash: ['Clash_Regular', 'Inter']              // Your properly configured font!
+        sans: ['"Google Sans"', '"Google Sans Text"', 'Arial', 'sans-serif'],
+        mono: ['"Google Sans"', '"Google Sans Text"', 'Arial', 'sans-serif'],
+        display: ['"Google Sans"', '"Google Sans Text"', 'Arial', 'sans-serif'],
+        body: ['"Google Sans"', '"Google Sans Text"', 'Arial', 'sans-serif'],
+        clash: ['Clash_Regular', '"Google Sans"', 'Arial', 'sans-serif']
       },
 
       clipPath: {
