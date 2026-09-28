@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'clash-forge-village-export'
+const VILLAGES_STORAGE_KEY = 'clash-forge-village-exports'
 
 function firstValue(obj, keys) {
   for (const key of keys) {
@@ -283,21 +284,29 @@ function extractVillageStats(data) {
 }
 
 export function useVillageExport() {
-  const [raw, setRaw] = useState(() => localStorage.getItem(STORAGE_KEY) || '')
-  const [error, setError] = useState(null)
-  const [importedAt, setImportedAt] = useState(() => {
-    const value = localStorage.getItem(`${STORAGE_KEY}:time`)
-    return value ? Number(value) : null
-  })
-
-  const village = useMemo(() => {
-    if (!raw) return null
+  const [saved, setSaved] = useState(() => {
     try {
-      return JSON.parse(raw)
+      const stored = JSON.parse(localStorage.getItem(VILLAGES_STORAGE_KEY) || 'null')
+      if (Array.isArray(stored)) {
+        return { villages: stored, selectedId: stored[0]?.id || '' }
+      }
+
+      const legacy = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+      if (legacy && typeof legacy === 'object' && !Array.isArray(legacy)) {
+        const id = `tag:${String(legacy.tag || 'village').replace(/^#/, '').toUpperCase()}`
+        const importedAt = Number(localStorage.getItem(`${STORAGE_KEY}:time`)) || Date.now()
+        return { villages: [{ id, data: legacy, importedAt }], selectedId: id }
+      }
     } catch {
-      return null
+      // Ignore invalid stored data and let the user import a fresh export.
     }
-  }, [raw])
+    return { villages: [], selectedId: '' }
+  })
+  const [error, setError] = useState(null)
+  const selected = saved.villages.find((entry) => entry.id === saved.selectedId) || saved.villages[0] || null
+  const village = selected?.data || null
+  const importedAt = selected?.importedAt || null
+  const raw = selected ? JSON.stringify(selected.data) : ''
 
   const upgrades = useMemo(() => village ? extractUpgrades(village) : [], [village])
   const builderCount = useMemo(() => village ? extractBuilderCount(village) : null, [village])
@@ -310,29 +319,56 @@ export function useVillageExport() {
     }
 
     try {
-      JSON.parse(cleaned)
-      localStorage.setItem(STORAGE_KEY, cleaned)
+      const data = JSON.parse(cleaned)
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        setError('Import one village JSON object at a time.')
+        return false
+      }
       const now = Date.now()
-      localStorage.setItem(`${STORAGE_KEY}:time`, String(now))
-      setRaw(cleaned)
-      setImportedAt(now)
+      const tag = typeof data.tag === 'string' ? data.tag.trim().replace(/^#/, '').toUpperCase() : ''
+      const id = tag
+        ? `tag:${tag}`
+        : `village:${now}:${Math.random().toString(36).slice(2, 8)}`
+      const record = { id, data, importedAt: now }
+      const existingIndex = saved.villages.findIndex((entry) => entry.id === id)
+      const villages = existingIndex < 0
+        ? [...saved.villages, record]
+        : saved.villages.map((entry, index) => index === existingIndex ? record : entry)
+
+      try {
+        localStorage.setItem(VILLAGES_STORAGE_KEY, JSON.stringify(villages))
+        localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(`${STORAGE_KEY}:time`)
+      } catch {
+        setError('Could not save this village in browser storage. Free some browser storage and try again.')
+        return false
+      }
+
+      setSaved({ villages, selectedId: id })
       setError(null)
       return true
     } catch {
-      setError('That does not look like valid village JSON. Copy the complete export from Clash of Clans and paste it here.')
+      setError('That does not look like valid village JSON. Import one complete village export at a time.')
       return false
     }
   }
 
-  function clearVillage() {
-    localStorage.removeItem(STORAGE_KEY)
-    localStorage.removeItem(`${STORAGE_KEY}:time`)
-    setRaw('')
-    setImportedAt(null)
-    setError(null)
+  function selectVillage(id) {
+    setSaved((current) => ({ ...current, selectedId: id }))
   }
 
-  return { raw, village, upgrades, builderCount, importedAt, error, importVillage, clearVillage }
+  return {
+    raw,
+    village,
+    villages: saved.villages,
+    selectedVillageId: selected?.id || '',
+    upgrades,
+    builderCount,
+    importedAt,
+    error,
+    importVillage,
+    selectVillage,
+  }
 }
 
 function ImportSteps() {
@@ -356,10 +392,22 @@ function ImportSteps() {
 }
 
 export default function VillageImport() {
-  const { raw, village, upgrades, builderCount, importedAt, error, importVillage, clearVillage } = useVillageExport()
+  const {
+    raw,
+    village,
+    villages,
+    selectedVillageId,
+    upgrades,
+    builderCount,
+    importedAt,
+    error,
+    importVillage,
+    selectVillage,
+  } = useVillageExport()
   const [open, setOpen] = useState(!raw)
   const [text, setText] = useState('')
   const [pasting, setPasting] = useState(false)
+  const [comparing, setComparing] = useState(false)
   const [, tick] = useState(0)
 
   useEffect(() => {
@@ -372,8 +420,7 @@ export default function VillageImport() {
     try {
       const clipboard = await navigator.clipboard.readText()
       setText(clipboard)
-      importVillage(clipboard)
-      setOpen(false)
+      if (importVillage(clipboard)) setOpen(false)
     } catch {
       setOpen(true)
       setText('')
@@ -393,8 +440,10 @@ export default function VillageImport() {
               <span className="h-2 w-2 rounded-full bg-[#ffc800] shadow-[0_0_12px_rgba(255,200,0,.55)]" />
               <span className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800]">Village Export</span>
             </div>
-            <h2 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide">Upload Village Export</h2>
-            <p className="text-slate-400 text-sm mt-1">Import your snapshot to see active builders and upgrade progress.</p>
+            <h2 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide">
+              {villages.length ? 'Village Exports' : 'Upload Village Export'}
+            </h2>
+            <p className="text-slate-400 text-sm mt-1">Add one JSON export per village, then compare their progress.</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -405,9 +454,9 @@ export default function VillageImport() {
             >
               {pasting ? 'Reading Clipboard…' : 'Paste Village Data'}
             </button>
-            {raw && (
-              <button onClick={() => setOpen((value) => !value)} className="rounded-xl border border-slate-700/60 px-4 py-2.5 text-slate-300 text-xs font-bold uppercase tracking-wider hover:bg-slate-800/40">
-                {open ? 'Hide' : 'Update Export'}
+            {villages.length > 0 && (
+              <button onClick={() => { setOpen((value) => !value); setError(null) }} className="rounded-xl border border-slate-700/60 px-4 py-2.5 text-slate-300 text-xs font-bold uppercase tracking-wider hover:bg-slate-800/40">
+                {open ? 'Close Import' : '+ Add Another Village'}
               </button>
             )}
           </div>
@@ -426,11 +475,10 @@ export default function VillageImport() {
                 className="w-full resize-y rounded-xl border border-slate-700/60 bg-slate-950/40 p-3 text-xs font-mono text-slate-200 outline-none"
               />
               <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
-                <p className="text-xs text-slate-500">Your village export is stored locally in this browser.</p>
+                <p className="text-xs text-slate-500">Each import adds a village or updates the same village tag. Data stays in this browser.</p>
                 <div className="flex gap-2">
-                  {raw && <button onClick={clearVillage} className="px-3 py-2 text-xs font-bold text-red-400">Clear</button>}
-                  <button onClick={() => { if (importVillage(text)) setOpen(false) }} className="rounded-lg bg-[#ffc800] px-4 py-2 text-xs font-black uppercase text-slate-950">
-                    Import Village
+                  <button onClick={() => { if (importVillage(text)) { setOpen(false); setText('') } }} className="rounded-lg bg-[#ffc800] px-4 py-2 text-xs font-black uppercase text-slate-950">
+                    {villages.length ? 'Add / Update Village' : 'Import Village'}
                   </button>
                 </div>
               </div>
@@ -443,15 +491,157 @@ export default function VillageImport() {
         {raw && !open && (
           <div className="flex flex-wrap items-center gap-3 rounded-xl bg-slate-900/20 border border-slate-700/40 px-4 py-3">
             <span className="text-emerald-400 text-sm">✓</span>
-            <span className="text-slate-300 text-sm font-semibold">Village export loaded</span>
+            <span className="text-slate-300 text-sm font-semibold">{villages.length} village{villages.length === 1 ? '' : 's'} saved</span>
             {importedAt && <span className="text-slate-500 text-xs">Updated {new Date(importedAt).toLocaleString()}</span>}
             <span className="ml-auto text-xs text-slate-400">{upgrades.length} active upgrade{upgrades.length === 1 ? '' : 's'}</span>
           </div>
         )}
       </div>
 
-      {raw && <VillageDashboard village={village} stats={stats} upgrades={upgrades} builderCount={builderCount} />}
+      {villages.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Select village">
+              {villages.map((entry, index) => {
+                const label = villageLabel(entry, index)
+                const selected = entry.id === selectedVillageId
+                return <button key={entry.id} type="button" onClick={() => { selectVillage(entry.id); setComparing(false) }}
+                  aria-pressed={selected}
+                  className={`rounded-lg border px-3 py-2 text-xs font-bold ${selected ? 'border-[#ffc800]/50 bg-amber-500/10 text-[#ffc800]' : 'border-slate-700 text-slate-400 hover:bg-slate-800'}`}>
+                  {label}
+                </button>
+              })}
+            </div>
+            {villages.length > 1 && (
+              <button type="button" onClick={() => setComparing((value) => !value)} aria-pressed={comparing}
+                className={`rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide ${comparing ? 'border-[#ffc800]/50 bg-amber-500/10 text-[#ffc800]' : 'border-slate-700 text-slate-300 hover:bg-slate-800'}`}>
+                {comparing ? 'View Selected Village' : 'Compare Villages'}
+              </button>
+            )}
+          </div>
+
+          {comparing
+            ? <VillageComparison villages={villages} />
+            : <VillageDashboard key={selectedVillageId} village={village} stats={stats} upgrades={upgrades} builderCount={builderCount} />}
+        </div>
+      )}
     </section>
+  )
+}
+
+function villageLabel(record, index) {
+  const tag = record.data?.tag
+  const townHall = extractVillageStats(record.data)?.townHall
+  return `${tag ? `#${String(tag).replace(/^#/, '')}` : `Village ${index + 1}`}${townHall ? ` · TH${townHall}` : ''}`
+}
+
+function comparisonItems(village) {
+  const items = new Map()
+
+  EXPORT_COLLECTIONS.forEach(({ key, label }) => {
+    const duplicates = new Map()
+    const entries = Array.isArray(village?.[key]) ? village[key] : []
+    entries.forEach((entry) => {
+      const dataId = firstValue(entry, ['data', 'id'])
+      const occurrence = duplicates.get(dataId) || 0
+      duplicates.set(dataId, occurrence + 1)
+      const id = `${key}:${dataId}:${occurrence}`
+      const kind = key === 'buildings' ? 'building'
+        : key === 'traps' ? 'trap'
+          : key === 'heroes' ? 'hero'
+            : key === 'pets' ? 'pet'
+              : key === 'spells' ? 'spell' : 'troop'
+      items.set(id, {
+        id,
+        name: formatDataId(dataId),
+        category: label,
+        kind,
+        level: firstValue(entry, ['lvl', 'level']),
+      })
+    })
+  })
+
+  return items
+}
+
+function VillageComparison({ villages }) {
+  const [leftId, setLeftId] = useState(villages[0]?.id || '')
+  const [rightId, setRightId] = useState(villages[1]?.id || '')
+  const left = villages.find((entry) => entry.id === leftId) || villages[0]
+  const right = villages.find((entry) => entry.id === rightId) || villages[1] || villages[0]
+  const leftItems = comparisonItems(left.data)
+  const rightItems = comparisonItems(right.data)
+  const itemIds = new Set([...leftItems.keys(), ...rightItems.keys()])
+  const rows = [...itemIds].map((id) => ({ id, left: leftItems.get(id), right: rightItems.get(id) }))
+    .sort((a, b) => {
+      const categoryOrder = (a.left || a.right).category.localeCompare((b.left || b.right).category)
+      return categoryOrder || (a.left || a.right).name.localeCompare((b.left || b.right).name)
+    })
+  const leftStats = extractVillageStats(left.data)
+  const rightStats = extractVillageStats(right.data)
+  const leftName = villageLabel(left, villages.findIndex((entry) => entry.id === left.id))
+  const rightName = villageLabel(right, villages.findIndex((entry) => entry.id === right.id))
+
+  return (
+    <section className="village-tracker plate p-4 sm:p-6 text-left space-y-5">
+      <div>
+        <p className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800]">Village comparison</p>
+        <h3 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide">Compare progress</h3>
+        <p className="mt-1 text-sm text-slate-400">Compare exported levels item by item. The difference is first village level minus second village level.</p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-3">
+        <ComparisonVillageCard stats={leftStats} selectedId={leftId} excludeId={rightId} onSelect={setLeftId} villages={villages} label="First village" />
+        <ComparisonVillageCard stats={rightStats} selectedId={rightId} excludeId={leftId} onSelect={setRightId} villages={villages} label="Second village" />
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-slate-700/50">
+        <table className="w-full min-w-[36rem] text-left text-sm">
+          <thead className="bg-slate-900/50 text-[10px] uppercase tracking-wider text-slate-500">
+            <tr><th className="px-3 py-3">Item</th><th className="px-3 py-3">{leftName}</th><th className="px-3 py-3">{rightName}</th><th className="px-3 py-3">Difference</th></tr>
+          </thead>
+          <tbody>
+            {rows.map(({ id, left: leftItem, right: rightItem }) => {
+              const item = leftItem || rightItem
+              const leftLevel = leftItem?.level == null ? null : Number(leftItem.level)
+              const rightLevel = rightItem?.level == null ? null : Number(rightItem.level)
+              const delta = leftLevel !== null && rightLevel !== null && Number.isFinite(leftLevel) && Number.isFinite(rightLevel)
+                ? leftLevel - rightLevel
+                : null
+              const difference = delta === null
+                ? leftItem ? 'Not in second export' : 'Not in first export'
+                : delta === 0 ? 'Same level' : `${delta > 0 ? leftName : rightName} +${Math.abs(delta)}`
+              return <tr key={id} className="border-t border-slate-700/30 text-slate-300">
+                <td className="px-3 py-2.5"><span className="inline-flex items-center gap-2"><span className="h-7 w-7 shrink-0"><VillageItemIcon kind={item.kind} name={item.name} level={leftItem?.level || rightItem?.level} /></span><span><span className="block text-xs font-semibold text-slate-100">{item.name}</span><span className="text-[10px] text-slate-500">{item.category}</span></span></span></td>
+                <td className="px-3 py-2.5 font-clash">{leftLevel ?? '—'}</td>
+                <td className="px-3 py-2.5 font-clash">{rightLevel ?? '—'}</td>
+                <td className={`px-3 py-2.5 text-xs font-semibold ${delta > 0 ? 'text-emerald-400' : delta < 0 ? 'text-amber-300' : 'text-slate-400'}`}>{difference}</td>
+              </tr>
+            })}
+          </tbody>
+        </table>
+      </div>
+      {!rows.length && <p className="text-sm text-slate-400">These exports do not contain comparable item levels.</p>}
+    </section>
+  )
+}
+
+function ComparisonVillageCard({ stats, selectedId, excludeId, onSelect, villages, label }) {
+  return (
+    <div className="village-side-card space-y-3">
+      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}
+        <select value={selectedId} onChange={(event) => onSelect(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-[#0f141e] px-3 py-2 text-sm font-semibold text-slate-100">
+          {villages.map((entry, index) => <option key={entry.id} value={entry.id} disabled={entry.id === excludeId}>{villageLabel(entry, index)}</option>)}
+        </select>
+      </label>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <InfoRow label="Town Hall" value={`Level ${stats?.townHall || '—'}`} />
+        <InfoRow label="Buildings" value={stats?.buildings || 0} />
+        <InfoRow label="Heroes" value={stats?.heroes || 0} />
+        <InfoRow label="Troops" value={stats?.troops || 0} />
+        <InfoRow label="Active upgrades" value={stats?.active || 0} />
+      </div>
+    </div>
   )
 }
 
