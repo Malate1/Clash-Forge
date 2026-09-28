@@ -168,13 +168,13 @@ export default function PlayerTroops({ player }) {
       />
 
       {/* Super Troops Separator */}
-      <Group
+      {/* <Group
         title="Super Troops"
         items={superTroops}
         kind="troop"
         village="home"
         badge={superTroops.length}
-      />
+      /> */}
 
       {/* Siege Machines Separator */}
       <Group

@@ -456,17 +456,33 @@ export default function VillageImport() {
 }
 
 function VillageDashboard({ village, stats, upgrades, builderCount }) {
+  const [activeTab, setActiveTab] = useState('Overview')
   const now = Date.now()
   const tag = village?.tag || 'Unknown village'
   const exportedAt = toTimestamp(village?.timestamp)
-  const categories = [
-    ['Buildings', stats?.buildings || 0, '🏰'],
-    ['Heroes', stats?.heroes || 0, '⚔️'],
-    ['Troops', stats?.troops || 0, '🪖'],
-    ['Spells', stats?.spells || 0, '✨'],
-    ['Traps', stats?.traps || 0, '💣'],
-    ['Pets', stats?.pets || 0, '🐾'],
+  const entriesFor = (key) => (Array.isArray(village?.[key]) ? village[key] : []).map((entry, index) => ({
+    ...entry,
+    name: formatDataId(firstValue(entry, ['data', 'id'])),
+    id: `${key}-${firstValue(entry, ['data', 'id'])}-${index}`,
+  }))
+  const buildings = entriesFor('buildings')
+  const army = [
+    ...entriesFor('heroes').map((item) => ({ ...item, category: 'Hero', kind: 'hero' })),
+    ...entriesFor('units').map((item) => ({ ...item, category: 'Troop', kind: 'troop' })),
+    ...entriesFor('spells').map((item) => ({ ...item, category: 'Spell', kind: 'spell' })),
+    ...entriesFor('pets').map((item) => ({ ...item, category: 'Pet', kind: 'pet' })),
+    ...entriesFor('siege_machines').map((item) => ({ ...item, category: 'Siege Machine', kind: 'troop' })),
   ]
+  const traps = entriesFor('traps').map((item) => ({ ...item, category: 'Trap', kind: 'trap' }))
+  const categories = [
+    ['Buildings', stats?.buildings || 0, 'building', buildings[0]],
+    ['Heroes', stats?.heroes || 0, 'hero', army.find((item) => item.kind === 'hero')],
+    ['Troops', stats?.troops || 0, 'troop', army.find((item) => item.kind === 'troop')],
+    ['Spells', stats?.spells || 0, 'spell', army.find((item) => item.kind === 'spell')],
+    ['Traps', stats?.traps || 0, 'trap', traps[0]],
+    ['Pets', stats?.pets || 0, 'pet', army.find((item) => item.kind === 'pet')],
+  ]
+  const tabs = ['Overview', 'Upgrades', 'Buildings', 'Army']
 
   return (
     <div className="village-tracker plate p-4 sm:p-6 text-left">
@@ -489,33 +505,78 @@ function VillageDashboard({ village, stats, upgrades, builderCount }) {
       </div>
 
       <div className="village-tabs" role="tablist" aria-label="Village sections">
-        <span className="active">Overview</span><span>Upgrades</span><span>Buildings</span><span>Army</span>
+        {tabs.map((tab) => (
+          <button key={tab} id={`village-tab-${tab.toLowerCase()}`} type="button" role="tab"
+            aria-selected={activeTab === tab} aria-controls="village-tab-panel"
+            className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}>
+            {tab}
+          </button>
+        ))}
       </div>
 
       <div className="village-stat-grid">
-        {categories.map(([label, count, icon]) => (
+        {categories.map(([label, count, kind, item]) => (
           <div className="village-stat" key={label}>
-            <span className="village-stat-icon">{icon}</span>
+            <span className="village-stat-icon"><VillageItemIcon kind={kind} name={item?.name} level={item?.lvl} /></span>
             <div><strong>{count}</strong><small>{label}</small></div>
           </div>
         ))}
       </div>
 
-      <div className="mt-6 grid lg:grid-cols-[1.35fr_.65fr] gap-5">
-        <BuilderUpgrades upgrades={upgrades} builderCount={builderCount} />
-        <div className="village-side-card">
-          <div className="flex items-center justify-between mb-4"><h4 className="font-clash text-lg text-white uppercase tracking-wide">Village data</h4><span className="text-xs text-slate-500">Export</span></div>
-          <div className="space-y-3">
-            <InfoRow label="Town Hall" value={`Level ${stats?.townHall || '—'}`} />
-            <InfoRow label="Buildings" value={stats?.buildings || 0} />
-            <InfoRow label="Traps" value={stats?.traps || 0} />
-            <InfoRow label="Pets" value={stats?.pets || 0} />
-            <InfoRow label="Siege machines" value={stats?.siege || 0} />
+      <div id="village-tab-panel" role="tabpanel" aria-labelledby={`village-tab-${activeTab.toLowerCase()}`} className="mt-6">
+        {activeTab === 'Overview' && <div className="grid lg:grid-cols-[1.35fr_.65fr] gap-5">
+          <BuilderUpgrades upgrades={upgrades} builderCount={builderCount} />
+          <div className="village-side-card">
+            <div className="flex items-center justify-between mb-4"><h4 className="font-clash text-lg text-white uppercase tracking-wide">Village data</h4><span className="text-xs text-slate-500">Export</span></div>
+            <div className="space-y-3">
+              <InfoRow label="Town Hall" value={`Level ${stats?.townHall || '—'}`} />
+              <InfoRow label="Buildings" value={stats?.buildings || 0} />
+              <InfoRow label="Traps" value={stats?.traps || 0} />
+              <InfoRow label="Pets" value={stats?.pets || 0} />
+              <InfoRow label="Siege machines" value={stats?.siege || 0} />
+            </div>
           </div>
-        </div>
+        </div>}
+        {activeTab === 'Upgrades' && <BuilderUpgrades upgrades={upgrades} builderCount={builderCount} />}
+        {activeTab === 'Buildings' && <VillageItemGrid title="Buildings & Traps" items={[
+          ...buildings.map((item) => ({ ...item, category: 'Building', kind: 'building' })), ...traps,
+        ]} empty="No buildings or traps found in this export." />}
+        {activeTab === 'Army' && <VillageItemGrid title="Army" items={army} empty="No heroes, troops, spells, pets, or siege machines found in this export." />}
       </div>
     </div>
   )
+}
+
+const VILLAGE_ASSET_BASE = 'https://assets.clashk.ing'
+
+function villageAssetUrl(kind, name, level) {
+  const clean = String(name || '').toLowerCase().replace(/[.'’]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+  if (!clean) return null
+  if (kind === 'building') return `${VILLAGE_ASSET_BASE}/buildings/home-village/${clean}/level_${Math.max(1, Number(level) || 1)}.webp`
+  if (kind === 'trap') return `${VILLAGE_ASSET_BASE}/traps/home-village/${clean}/level_${Math.max(1, Number(level) || 1)}.webp`
+  if (kind === 'hero' || kind === 'pet' || kind === 'troop') return `${VILLAGE_ASSET_BASE}/${kind === 'hero' ? 'heroes' : kind === 'pet' ? 'pets' : 'troops'}/${clean}/icon.webp`
+  if (kind === 'spell') return `${VILLAGE_ASSET_BASE}/spells/${clean}.webp`
+  return null
+}
+
+function VillageItemIcon({ kind, name, level }) {
+  const [failed, setFailed] = useState(false)
+  const src = villageAssetUrl(kind, name, level)
+  return src && !failed
+    ? <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
+    : <span aria-hidden="true">{kind === 'hero' ? '⚔' : kind === 'trap' ? '✹' : kind === 'spell' ? '✦' : '◆'}</span>
+}
+
+function VillageItemGrid({ title, items, empty }) {
+  return <div className="village-upgrades-card">
+    <h4 className="font-clash text-xl text-white uppercase tracking-wide mb-4">{title}</h4>
+    {items.length ? <div className="village-item-grid">{items.map((item) => (
+      <div className="village-item-card" key={item.id}>
+        <span className="village-item-icon"><VillageItemIcon kind={item.kind} name={item.name} level={item.lvl} /></span>
+        <div className="min-w-0"><strong>{item.name}</strong><small>{item.category} · Level {item.lvl ?? '—'}</small></div>
+      </div>
+    ))}</div> : <p className="text-sm text-slate-400">{empty}</p>}
+  </div>
 }
 
 function InfoRow({ label, value }) {
@@ -543,7 +604,10 @@ function BuilderUpgrades({ upgrades, builderCount }) {
             const progress = total ? Math.min(100, Math.max(0, ((now - upgrade.startedAt) / total) * 100)) : null
             return (
               <div key={upgrade.id} className="village-upgrade-row">
-                <div className="village-upgrade-icon">{upgrade.category === 'Hero' ? '⚔' : upgrade.category === 'Building' ? '🏰' : '✦'}</div>
+                <div className="village-upgrade-icon"><VillageItemIcon
+                  kind={upgrade.category === 'Hero' ? 'hero' : upgrade.category === 'Trap' ? 'trap' : upgrade.category === 'Troop' || upgrade.category === 'Siege Machine' ? 'troop' : upgrade.category === 'Spell' ? 'spell' : upgrade.category === 'Pet' ? 'pet' : 'building'}
+                  name={upgrade.name} level={upgrade.level}
+                /></div>
                 <div className="flex-1 min-w-0"><div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-clash text-base sm:text-lg text-white uppercase tracking-wide truncate">{upgrade.name}</p>
