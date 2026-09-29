@@ -911,7 +911,7 @@ function VillageDashboard({ village, stats, upgrades, builderCount }) {
             </div>
             <div className="min-w-0">
               <p className="font-clash text-xs uppercase tracking-[.16em] text-[#ffc800]">Village Tracker</p>
-              <h3 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide truncate">Town Hall {stats?.townHall || '—'} Village</h3>
+              <h3 className="font-clash text-2xl sm:text-3xl text-white uppercase tracking-wide break-words sm:truncate">Town Hall {stats?.townHall || '—'} Village</h3>
               <p className="text-xs text-slate-400 mt-1 font-mono">{tag}</p>
             </div>
           </div>
