@@ -668,7 +668,7 @@ export default function VillageImport() {
             <p className="text-slate-400 text-sm mt-1">Add one JSON export per village, then compare their progress.</p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="village-import-actions flex flex-wrap gap-2">
             <button
               onClick={pasteVillage}
               disabled={pasting}
@@ -696,7 +696,7 @@ export default function VillageImport() {
                 rows={6}
                 className="w-full resize-y rounded-xl border border-slate-700/60 bg-slate-950/40 p-3 text-xs font-mono text-slate-200 outline-none"
               />
-              <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
+              <div className="village-import-footer flex flex-wrap items-center justify-between gap-3 mt-3">
                 <p className="text-xs text-slate-500">Each import adds a village or updates the same village tag. Data stays in this browser.</p>
                 <div className="flex gap-2">
                   <button onClick={() => { if (importVillage(text)) { setOpen(false); setText('') } }} className="rounded-lg bg-[#ffc800] px-4 py-2 text-xs font-black uppercase text-slate-950">
@@ -721,8 +721,8 @@ export default function VillageImport() {
 
       {villages.length > 0 && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Select village">
+          <div className="village-controls-row flex flex-wrap items-center justify-between gap-3">
+            <div className="village-selector-list flex flex-wrap gap-2" role="group" aria-label="Select village">
               {villages.map((entry, index) => {
                 const label = villageLabel(entry, index)
                 const selected = entry.id === selectedVillageId
@@ -733,7 +733,7 @@ export default function VillageImport() {
                 </button>
               })}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="village-action-buttons flex flex-wrap gap-2">
               <button type="button" onClick={clearSelectedVillage}
                 className="rounded-lg border border-red-500/30 px-4 py-2 text-xs font-black uppercase tracking-wide text-red-300 hover:bg-red-500/10">
                 Clear Selected Data
