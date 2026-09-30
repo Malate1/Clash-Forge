@@ -2,6 +2,48 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ItemIcon from './ItemIcon.jsx'
 import { formatNumber, roleLabel } from '../utils/format.js'
+import { toastError, toastSuccess } from '../utils/notifications.js'
+
+const ROSTER_FILTERS = [
+  { id: 'all', label: 'All members' },
+  { id: 'leadership', label: 'Leadership' },
+  { id: 'elders', label: 'Elders' },
+  { id: 'donation-debt', label: 'Donation deficit' },
+]
+
+function csvCell(value) {
+  let text = String(value ?? '')
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text.trimStart())) text = `'${text}`
+  return `"${text.replace(/"/g, '""')}"`
+}
+
+function exportRosterCsv(members) {
+  const columns = [
+    ['Rank', (member) => member.clanRank],
+    ['Name', (member) => member.name],
+    ['Player tag', (member) => member.tag],
+    ['Role', (member) => roleLabel(member.role)],
+    ['Town Hall', (member) => member.townHallLevel],
+    ['League', (member) => member.leagueTier?.name],
+    ['Trophies', (member) => member.trophies],
+    ['Donated', (member) => member.donations],
+    ['Received', (member) => member.donationsReceived],
+    ['Net donations', (member) => (member.donations || 0) - (member.donationsReceived || 0)],
+  ]
+  const csv = [
+    columns.map(([label]) => csvCell(label)).join(','),
+    ...members.map((member) => columns.map(([, getValue]) => csvCell(getValue(member))).join(',')),
+  ].join('\r\n')
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `clan-roster-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 0)
+}
 
 const COLUMNS = [
   { key: 'clanRank', label: '#' },
@@ -20,19 +62,23 @@ export default function MemberTable({ members = [] }) {
   const [sortKey, setSortKey] = useState('clanRank')
   const [asc, setAsc] = useState(true)
   const [search, setSearch] = useState('')
+  const [rosterFilter, setRosterFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
   // 1. Filter members by search input (name or tag)
   const filtered = useMemo(() => {
-    if (!search.trim()) return members
-    const term = search.toLowerCase()
-    return members.filter(
-      (m) =>
-        m.name?.toLowerCase().includes(term) ||
-        m.tag?.toLowerCase().includes(term)
-    )
-  }, [members, search])
+    const term = search.trim().toLowerCase()
+    return members.filter((member) => {
+      const matchesSearch = !term || member.name?.toLowerCase().includes(term) || member.tag?.toLowerCase().includes(term)
+      const netDonations = (member.donations || 0) - (member.donationsReceived || 0)
+      const matchesFilter = rosterFilter === 'all'
+        || (rosterFilter === 'leadership' && ['leader', 'coLeader'].includes(member.role))
+        || (rosterFilter === 'elders' && ['admin', 'elder'].includes(member.role))
+        || (rosterFilter === 'donation-debt' && netDonations < 0)
+      return matchesSearch && matchesFilter
+    })
+  }, [members, search, rosterFilter])
 
   // 2. Sort filtered members
   const sorted = useMemo(() => {
@@ -80,10 +126,23 @@ export default function MemberTable({ members = [] }) {
     setPage(1)
   }
 
+  function handleExport() {
+    try {
+      if (!filtered.length) {
+        toastError('No members match the current search and filters.', 'Nothing to export')
+        return
+      }
+      exportRosterCsv(sorted)
+      toastSuccess(`Exported ${sorted.length} roster member${sorted.length === 1 ? '' : 's'} to CSV.`, 'Roster exported')
+    } catch {
+      toastError('The roster CSV could not be created in this browser.', 'Export failed')
+    }
+  }
+
   return (
     <div className="bg-[#182030] border-2 border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
       {/* Controls: Search & Page Size */}
-      <div className="p-4 sm:p-5 border-b border-slate-700/50 flex flex-col sm:flex-row gap-4 justify-between items-center bg-[#131a27]">
+      <div className="p-4 sm:p-5 border-b border-slate-700/50 flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center bg-[#131a27]">
         {/* Search Input */}
         <div className="relative w-full sm:w-80">
           <input
@@ -109,7 +168,7 @@ export default function MemberTable({ members = [] }) {
         </div>
 
         {/* Page Size Selector */}
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider w-full sm:w-auto justify-end">
+        <div className="flex items-center justify-between sm:justify-end gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider w-full sm:w-auto">
           <span>Show:</span>
           <select
             value={pageSize}
@@ -121,6 +180,24 @@ export default function MemberTable({ members = [] }) {
             <option value={50}>50</option>
           </select>
         </div>
+        <button type="button" onClick={handleExport} className="w-full sm:w-auto rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#ffc800] hover:bg-slate-800 focus-ring">
+          Export filtered CSV
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2 border-b border-slate-700/50 bg-[#131a27] px-4 pb-4 sm:px-5" role="group" aria-label="Filter clan roster">
+        {ROSTER_FILTERS.map((filter) => {
+          const count = filter.id === 'all' ? members.length : members.filter((member) => {
+            const netDonations = (member.donations || 0) - (member.donationsReceived || 0)
+            if (filter.id === 'leadership') return ['leader', 'coLeader'].includes(member.role)
+            if (filter.id === 'elders') return ['admin', 'elder'].includes(member.role)
+            return netDonations < 0
+          }).length
+          return <button key={filter.id} type="button" onClick={() => { setRosterFilter(filter.id); setPage(1) }} aria-pressed={rosterFilter === filter.id}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${rosterFilter === filter.id ? 'border-[#ffc800]/50 bg-amber-500/10 text-[#ffc800]' : 'border-slate-700 text-slate-400 hover:bg-slate-800'}`}>
+            {filter.label} <span className="ml-1 opacity-70">{count}</span>
+          </button>
+        })}
       </div>
 
       {/* Data Table */}
@@ -218,7 +295,7 @@ export default function MemberTable({ members = [] }) {
                   colSpan={COLUMNS.length}
                   className="px-4 py-8 text-center text-slate-400 font-medium"
                 >
-                  No members found matching "{search}".
+                  No members match this search and roster filter.
                 </td>
               </tr>
             )}
