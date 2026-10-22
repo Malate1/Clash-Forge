@@ -419,12 +419,7 @@ export default function PlayerTroops({ player }) {
         badge={darkElixirTroops.length}
         reference="https://clashofclans.fandom.com/wiki/Dark_Elixir_Troops"
       />
-      <Group
-        title="Other Troops"
-        items={otherTroops}
-        kind="troop"
-        village="home"
-      />
+      
 
       {/* Siege Machines Separator */}
       <Group
