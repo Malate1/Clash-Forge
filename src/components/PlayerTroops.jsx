@@ -32,6 +32,47 @@ const SIEGE_NAMES = new Set([
   
 ]);
 
+const ELIXIR_TROOP_NAMES = new Set([
+  "Barbarian",
+  "Archer",
+  "Giant",
+  "Goblin",
+  "Wall Breaker",
+  "Balloon",
+  "Wizard",
+  "Healer",
+  "Dragon",
+  "P.E.K.K.A",
+  "Baby Dragon",
+  "Miner",
+  "Electro Dragon",
+  "Yeti",
+  "Dragon Rider",
+  "Electro Titan",
+  "Root Rider",
+  "Thrower",
+  "Meteor Golem",
+  "Rocket Balloon",
+  "Inferno Dragon",
+]);
+
+const DARK_ELIXIR_TROOP_NAMES = new Set([
+  "Minion",
+  "Hog Rider",
+  "Valkyrie",
+  "Golem",
+  "Witch",
+  "Lava Hound",
+  "Bowler",
+  "Ice Golem",
+  "Headhunter",
+  "Apprentice Warden",
+  "Druid",
+  "Furnace",
+  "Ruin Witch",
+  "Ice Hound",
+]);
+
 const HERO_EQUIPMENT = {
   "Barbarian King": [
     "Barbarian Puppet",
@@ -107,7 +148,15 @@ function ProgressBar({ level, maxLevel }) {
   );
 }
 
-function Group({ title, items, kind, village = "home", renderExtra, badge }) {
+function Group({
+  title,
+  items,
+  kind,
+  village = "home",
+  renderExtra,
+  badge,
+  reference,
+}) {
   if (!items || items.length === 0) return null;
   return (
     <div>
@@ -119,6 +168,15 @@ function Group({ title, items, kind, village = "home", renderExtra, badge }) {
           <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 font-mono">
             {badge}
           </span>
+        )}
+        {reference && (
+          <a
+            href={reference}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-cyan-300 hover:underline">
+            Resource reference
+          </a>
         )}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -303,6 +361,17 @@ export default function PlayerTroops({ player }) {
   const standardTroops = allHomeTroops.filter(
     (t) => !PET_NAMES.has(t.name) && !SIEGE_NAMES.has(t.name),
   );
+  const elixirTroops = standardTroops.filter((t) =>
+    ELIXIR_TROOP_NAMES.has(t.name),
+  );
+  const darkElixirTroops = standardTroops.filter((t) =>
+    DARK_ELIXIR_TROOP_NAMES.has(t.name),
+  );
+  const otherTroops = standardTroops.filter(
+    (t) =>
+      !ELIXIR_TROOP_NAMES.has(t.name) &&
+      !DARK_ELIXIR_TROOP_NAMES.has(t.name),
+  );
 
   const hasAnything =
     homeHeroes.length ||
@@ -333,10 +402,26 @@ export default function PlayerTroops({ player }) {
         badge={pets.length}
       />
 
-      {/* Standard Home Troops */}
+      {/* Home Village Troops */}
       <Group
-        title="Troops"
-        items={standardTroops}
+        title="Elixir Troops"
+        items={elixirTroops}
+        kind="troop"
+        village="home"
+        badge={elixirTroops.length}
+        reference="https://clashofclans.fandom.com/wiki/Elixir_Troops"
+      />
+      <Group
+        title="Dark Elixir Troops"
+        items={darkElixirTroops}
+        kind="troop"
+        village="home"
+        badge={darkElixirTroops.length}
+        reference="https://clashofclans.fandom.com/wiki/Dark_Elixir_Troops"
+      />
+      <Group
+        title="Other Troops"
+        items={otherTroops}
         kind="troop"
         village="home"
       />
