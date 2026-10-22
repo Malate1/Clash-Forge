@@ -13,7 +13,8 @@ const PET_NAMES = new Set([
   "Phoenix",
   "Sneezy",
   "Spirit Fox",
-  "Angry Jelly",
+	"Angry Jelly",
+  "Greedy Raven",
 ]);
 
 // Known Siege Machines
