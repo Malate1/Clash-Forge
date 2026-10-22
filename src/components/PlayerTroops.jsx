@@ -32,6 +32,64 @@ const SIEGE_NAMES = new Set([
   
 ]);
 
+const HERO_EQUIPMENT = {
+  "Barbarian King": [
+    "Barbarian Puppet",
+    "Rage Vial",
+    "Earthquake Boots",
+    "Vampstache",
+    "Giant Gauntlet",
+    "Spiky Ball",
+    "Snake Bracelet",
+    "Stick Horse",
+  ],
+  "Archer Queen": [
+    "Archer Puppet",
+    "Invisibility Vial",
+    "Giant Arrow",
+    "Healer Puppet",
+    "Frozen Arrow",
+    "Magic Mirror",
+    "Action Figure",
+    "Monolith Arrow",
+  ],
+  "Minion Prince": [
+    "Henchmen Puppet",
+    "Dark Orb",
+    "Metal Pants",
+    "Noble Iron",
+    "Dark Crown",
+    "Meteor Staff",
+    "Portal Pendant",
+  ],
+  "Grand Warden": [
+    "Eternal Tome",
+    "Life Gem",
+    "Rage Gem",
+    "Healing Tome",
+    "Fireball",
+    "Lavaloon Puppet",
+    "Heroic Torch",
+  ],
+  "Royal Champion": [
+    "Royal Gem",
+    "Seeking Shield",
+    "Hog Rider Puppet",
+    "Haste Vial",
+    "Rocket Spear",
+    "Electro Boots",
+    "Frost Flake",
+  ],
+  "Dragon Duke": [
+    "Fire Heart",
+    "Flame Blower",
+    "Stun Blaster",
+    "Electro Fangs",
+    "Rocket Backpack",
+    "Revenge Deck",
+  ],
+};
+
 function ProgressBar({ level, maxLevel }) {
   const pct = maxLevel > 0 ? Math.round((level / maxLevel) * 100) : 0;
   const maxed = level >= maxLevel;
@@ -106,28 +164,120 @@ function Group({ title, items, kind, village = "home", renderExtra, badge }) {
   );
 }
 
-function EquipmentChips({ equipment }) {
-  if (!equipment?.length) return null;
+function EquipmentCard({ equipment }) {
+  const maxed = equipment.level >= equipment.maxLevel;
   return (
-    <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-700/40">
-      {equipment.map((eq) => (
-        <span
-          key={eq.name}
-          className="inline-flex items-center gap-1.5 min-w-0"
-          title={`${eq.name} · Level ${eq.level}/${eq.maxLevel}`}>
-          <ItemIcon
-            kind="equipment"
-            name={eq.name}
-            className="w-5 h-5 shrink-0 object-contain drop-shadow"
-          />
-          <span className="font-clash text-[11px] sm:text-xs text-slate-300 whitespace-nowrap">
-            {eq.level}
-            <span className="text-slate-500 font-sans text-[9px] sm:text-[10px]">
-              /{eq.maxLevel}
+    <div className="bg-[#182030] border-2 border-slate-700/50 rounded-xl p-3 flex flex-col justify-between hover:border-slate-500/80 transition-colors shadow-md">
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2 min-w-0">
+            <ItemIcon
+              kind="equipment"
+              name={equipment.name}
+              className="w-6 h-6 shrink-0 object-contain drop-shadow"
+            />
+            <span className="text-slate-100 text-sm font-semibold truncate">
+              {equipment.name}
             </span>
           </span>
+          <span
+            className={`font-clash text-lg shrink-0 ${
+              maxed ? "text-fuchsia-400" : "text-slate-300"
+            }`}>
+            {equipment.level}
+            <span className="text-slate-500 text-xs font-sans">
+              /{equipment.maxLevel}
+            </span>
+          </span>
+        </div>
+        <ProgressBar level={equipment.level} maxLevel={equipment.maxLevel} />
+      </div>
+    </div>
+  );
+}
+
+function HeroEquipmentGroups({ equipment }) {
+  if (!equipment.length) return null;
+
+  const groupedEquipment = Object.entries(HERO_EQUIPMENT)
+    .map(([hero, names]) => ({
+      hero,
+      equipment: equipment.filter((item) => names.includes(item.name)),
+    }))
+    .filter((group) => group.equipment.length > 0);
+  const assignedEquipment = new Set(
+    groupedEquipment.flatMap((group) => group.equipment),
+  );
+  const unassignedEquipment = equipment.filter(
+    (item) => !assignedEquipment.has(item),
+  );
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div>
+          <h3 className="font-clash text-xl text-[#ffc800] uppercase tracking-wide drop-shadow-sm">
+            Hero Equipment
+          </h3>
+          <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-400 mt-1">
+            <span>Grouped by the hero that can use each item.</span>
+            <a
+              href="https://clashofclans.fandom.com/wiki/Hero_Equipment"
+              target="_blank"
+              rel="noreferrer"
+              className="text-cyan-300 hover:underline">
+              Equipment reference
+            </a>
+          </div>
+        </div>
+        <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 font-mono">
+          {equipment.length}
         </span>
-      ))}
+      </div>
+      <div className="space-y-6">
+        {groupedEquipment.map((group) => (
+          <section key={group.hero}>
+            <div className="flex items-center gap-2 mb-3">
+              <ItemIcon
+                kind="hero"
+                name={group.hero}
+                className="w-6 h-6 object-contain"
+              />
+              <h4 className="font-clash text-lg text-slate-200">
+                {group.hero}
+              </h4>
+              <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 font-mono">
+                {group.equipment.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {group.equipment.map((item) => (
+                <EquipmentCard key={item.name} equipment={item} />
+              ))}
+            </div>
+          </section>
+        ))}
+        {unassignedEquipment.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="font-clash text-lg text-slate-200">
+                Other Equipment
+              </h4>
+              <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 font-mono">
+                {unassignedEquipment.length}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-3">
+              The hero for these items is not in the current equipment map.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {unassignedEquipment.map((item) => (
+                <EquipmentCard key={item.name} equipment={item} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
@@ -159,7 +309,8 @@ export default function PlayerTroops({ player }) {
     builderHeroes.length ||
     allHomeTroops.length ||
     builderTroops.length ||
-    spells.length;
+    spells.length ||
+    heroEquipment.length;
 
   if (!hasAnything) return null;
 
@@ -171,7 +322,6 @@ export default function PlayerTroops({ player }) {
         items={homeHeroes}
         kind="hero"
         village="home"
-        renderExtra={(h) => <EquipmentChips equipment={h.equipment} />}
       />
 
       {/* Hero Pets */}
@@ -217,54 +367,7 @@ export default function PlayerTroops({ player }) {
       {/* Spells */}
       <Group title="Spells" items={spells} kind="spell" village="home" />
 
-      {/* Standalone Equipment List */}
-      {heroEquipment.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <h3 className="font-clash text-xl text-[#ffc800] uppercase tracking-wide drop-shadow-sm">
-              Hero Equipment
-            </h3>
-            <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 font-mono">
-              {heroEquipment.length}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {heroEquipment.map((eq) => {
-              const maxed = eq.level >= eq.maxLevel;
-              return (
-                <div
-                  key={eq.name}
-                  className="bg-[#182030] border-2 border-slate-700/50 rounded-xl p-3 flex flex-col justify-between hover:border-slate-500/80 transition-colors shadow-md">
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <ItemIcon
-                          kind="equipment"
-                          name={eq.name}
-                          className="w-6 h-6 shrink-0 object-contain drop-shadow"
-                        />
-                        <span className="text-slate-100 text-sm font-semibold truncate">
-                          {eq.name}
-                        </span>
-                      </span>
-                      <span
-                        className={`font-clash text-lg shrink-0 ${
-                          maxed ? "text-fuchsia-400" : "text-slate-300"
-                        }`}>
-                        {eq.level}
-                        <span className="text-slate-500 text-xs font-sans">
-                          /{eq.maxLevel}
-                        </span>
-                      </span>
-                    </div>
-                    <ProgressBar level={eq.level} maxLevel={eq.maxLevel} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <HeroEquipmentGroups equipment={heroEquipment} />
     </div>
   );
 }
