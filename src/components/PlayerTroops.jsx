@@ -156,6 +156,7 @@ function Group({
   renderExtra,
   badge,
   reference,
+  maxLevelLabel,
 }) {
   if (!items || items.length === 0) return null;
   return (
@@ -212,6 +213,11 @@ function Group({
                   </span>
                 </div>
                 <ProgressBar level={item.level} maxLevel={item.maxLevel} />
+                {maxLevelLabel && maxed && (
+                  <span className="mt-1 inline-flex rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
+                    {maxLevelLabel}
+                  </span>
+                )}
               </div>
               {renderExtra?.(item)}
             </div>
@@ -354,6 +360,12 @@ export default function PlayerTroops({ player }) {
     ) || [];
   const spells = player.spells?.filter((s) => s.village === "home") || [];
   const heroEquipment = player.heroEquipment || [];
+  const homeMaxLevelLabel = player.townHallLevel
+    ? `Max TH ${player.townHallLevel}`
+    : null;
+  const builderMaxLevelLabel = player.builderHallLevel
+    ? `Max BH ${player.builderHallLevel}`
+    : null;
 
   // Categorize home village troops into distinct groups
   const pets = allHomeTroops.filter((t) => PET_NAMES.has(t.name));
@@ -391,6 +403,7 @@ export default function PlayerTroops({ player }) {
         items={homeHeroes}
         kind="hero"
         village="home"
+        maxLevelLabel={homeMaxLevelLabel}
       />
 
       {/* Hero Pets */}
@@ -400,6 +413,7 @@ export default function PlayerTroops({ player }) {
         kind="pet"
         village="home"
         badge={pets.length}
+        maxLevelLabel={homeMaxLevelLabel}
       />
 
       {/* Home Village Troops */}
@@ -410,6 +424,7 @@ export default function PlayerTroops({ player }) {
         village="home"
         badge={elixirTroops.length}
         reference="https://clashofclans.fandom.com/wiki/Elixir_Troops"
+        maxLevelLabel={homeMaxLevelLabel}
       />
       <Group
         title="Dark Elixir Troops"
@@ -418,6 +433,7 @@ export default function PlayerTroops({ player }) {
         village="home"
         badge={darkElixirTroops.length}
         reference="https://clashofclans.fandom.com/wiki/Dark_Elixir_Troops"
+        maxLevelLabel={homeMaxLevelLabel}
       />
       
 
@@ -428,6 +444,7 @@ export default function PlayerTroops({ player }) {
         kind="troop"
         village="home"
         badge={siegeMachines.length}
+        maxLevelLabel={homeMaxLevelLabel}
       />
 
       {/* Builder Base Section */}
@@ -436,16 +453,24 @@ export default function PlayerTroops({ player }) {
         items={builderHeroes}
         kind="hero"
         village="builderBase"
+        maxLevelLabel={builderMaxLevelLabel}
       />
       <Group
         title="Builder Base Troops"
         items={builderTroops}
         kind="troop"
         village="builderBase"
+        maxLevelLabel={builderMaxLevelLabel}
       />
 
       {/* Spells */}
-      <Group title="Spells" items={spells} kind="spell" village="home" />
+      <Group
+        title="Spells"
+        items={spells}
+        kind="spell"
+        village="home"
+        maxLevelLabel={homeMaxLevelLabel}
+      />
 
       <HeroEquipmentGroups equipment={heroEquipment} />
     </div>
