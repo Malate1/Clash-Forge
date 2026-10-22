@@ -1,5 +1,6 @@
 import ItemIcon from "./ItemIcon.jsx";
 import { isSuperTroop } from "../utils/troops.js";
+import armyMaxLevels from "../utils/armyMaxLevels.json";
 
 // Known Hero Pets (from Supercell API player.troops array)
 const PET_NAMES = new Set([
@@ -157,6 +158,7 @@ function Group({
   badge,
   reference,
   maxLevelLabel,
+  hallLevel,
 }) {
   if (!items || items.length === 0) return null;
   return (
@@ -182,7 +184,11 @@ function Group({
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {items.map((item) => {
-          const maxed = item.level >= item.maxLevel;
+          const villageKey = village === "builderBase" ? "builder" : "home";
+          const townHallMax =
+            armyMaxLevels[villageKey][item.name]?.[hallLevel - 1];
+          const maxLevel = townHallMax || item.maxLevel;
+          const maxed = item.level >= maxLevel;
           return (
             <div
               key={item.name}
@@ -208,11 +214,11 @@ function Group({
                     }`}>
                     {item.level}
                     <span className="text-slate-500 text-[10px] sm:text-xs font-sans">
-                      /{item.maxLevel}
+                      /{maxLevel}
                     </span>
                   </span>
                 </div>
-                <ProgressBar level={item.level} maxLevel={item.maxLevel} />
+                <ProgressBar level={item.level} maxLevel={maxLevel} />
                 {maxLevelLabel && maxed && (
                   <span className="mt-1 inline-flex rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
                     {maxLevelLabel}
@@ -228,8 +234,11 @@ function Group({
   );
 }
 
-function EquipmentCard({ equipment }) {
-  const maxed = equipment.level >= equipment.maxLevel;
+function EquipmentCard({ equipment, townHallLevel }) {
+  const townHallMax =
+    armyMaxLevels.home[equipment.name]?.[townHallLevel - 1];
+  const maxLevel = townHallMax || equipment.maxLevel;
+  const maxed = equipment.level >= maxLevel;
   return (
     <div className="bg-[#182030] border-2 border-slate-700/50 rounded-xl p-3 flex flex-col justify-between hover:border-slate-500/80 transition-colors shadow-md">
       <div>
@@ -250,17 +259,17 @@ function EquipmentCard({ equipment }) {
             }`}>
             {equipment.level}
             <span className="text-slate-500 text-xs font-sans">
-              /{equipment.maxLevel}
+              /{maxLevel}
             </span>
           </span>
         </div>
-        <ProgressBar level={equipment.level} maxLevel={equipment.maxLevel} />
+        <ProgressBar level={equipment.level} maxLevel={maxLevel} />
       </div>
     </div>
   );
 }
 
-function HeroEquipmentGroups({ equipment }) {
+function HeroEquipmentGroups({ equipment, townHallLevel }) {
   if (!equipment.length) return null;
 
   const groupedEquipment = Object.entries(HERO_EQUIPMENT)
@@ -316,7 +325,11 @@ function HeroEquipmentGroups({ equipment }) {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {group.equipment.map((item) => (
-                <EquipmentCard key={item.name} equipment={item} />
+                <EquipmentCard
+                  key={item.name}
+                  equipment={item}
+                  townHallLevel={townHallLevel}
+                />
               ))}
             </div>
           </section>
@@ -336,7 +349,11 @@ function HeroEquipmentGroups({ equipment }) {
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {unassignedEquipment.map((item) => (
-                <EquipmentCard key={item.name} equipment={item} />
+                <EquipmentCard
+                  key={item.name}
+                  equipment={item}
+                  townHallLevel={townHallLevel}
+                />
               ))}
             </div>
           </section>
@@ -404,6 +421,7 @@ export default function PlayerTroops({ player }) {
         kind="hero"
         village="home"
         maxLevelLabel={homeMaxLevelLabel}
+        hallLevel={player.townHallLevel}
       />
 
       {/* Hero Pets */}
@@ -414,6 +432,7 @@ export default function PlayerTroops({ player }) {
         village="home"
         badge={pets.length}
         maxLevelLabel={homeMaxLevelLabel}
+        hallLevel={player.townHallLevel}
       />
 
       {/* Home Village Troops */}
@@ -425,6 +444,7 @@ export default function PlayerTroops({ player }) {
         badge={elixirTroops.length}
         reference="https://clashofclans.fandom.com/wiki/Elixir_Troops"
         maxLevelLabel={homeMaxLevelLabel}
+        hallLevel={player.townHallLevel}
       />
       <Group
         title="Dark Elixir Troops"
@@ -434,6 +454,7 @@ export default function PlayerTroops({ player }) {
         badge={darkElixirTroops.length}
         reference="https://clashofclans.fandom.com/wiki/Dark_Elixir_Troops"
         maxLevelLabel={homeMaxLevelLabel}
+        hallLevel={player.townHallLevel}
       />
       
 
@@ -445,6 +466,7 @@ export default function PlayerTroops({ player }) {
         village="home"
         badge={siegeMachines.length}
         maxLevelLabel={homeMaxLevelLabel}
+        hallLevel={player.townHallLevel}
       />
 
       {/* Builder Base Section */}
@@ -454,6 +476,7 @@ export default function PlayerTroops({ player }) {
         kind="hero"
         village="builderBase"
         maxLevelLabel={builderMaxLevelLabel}
+        hallLevel={player.builderHallLevel}
       />
       <Group
         title="Builder Base Troops"
@@ -461,6 +484,7 @@ export default function PlayerTroops({ player }) {
         kind="troop"
         village="builderBase"
         maxLevelLabel={builderMaxLevelLabel}
+        hallLevel={player.builderHallLevel}
       />
 
       {/* Spells */}
@@ -470,9 +494,13 @@ export default function PlayerTroops({ player }) {
         kind="spell"
         village="home"
         maxLevelLabel={homeMaxLevelLabel}
+        hallLevel={player.townHallLevel}
       />
 
-      <HeroEquipmentGroups equipment={heroEquipment} />
+      <HeroEquipmentGroups
+        equipment={heroEquipment}
+        townHallLevel={player.townHallLevel}
+      />
     </div>
   );
 }

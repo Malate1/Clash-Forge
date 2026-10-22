@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import ItemIcon from './ItemIcon.jsx'
 import { isSuperTroop } from '../utils/troops.js'
+import armyMaxLevels from '../utils/armyMaxLevels.json'
 
 const FILTERS = ['All', 'Heroes', 'Troops', 'Spells', 'Equipment']
 
@@ -15,16 +16,24 @@ export default function UpgradeGapPlanner({ player }) {
     ]
     return categories.flatMap(([category, items, kind]) => items
       .filter((item) => Number(item.maxLevel) > 0)
-      .map((item) => ({
-        name: item.name,
-        level: Number(item.level) || 0,
-        maxLevel: Number(item.maxLevel),
-        category,
-        kind,
-        village: item.village || 'home',
-        remaining: Number(item.maxLevel) - (Number(item.level) || 0),
-        progress: Math.min(100, Math.round(((Number(item.level) || 0) / Number(item.maxLevel)) * 100)),
-      })))
+      .map((item) => {
+        const village = item.village || 'home'
+        const hallLevel = Number(village === 'builderBase' ? player.builderHallLevel : player.townHallLevel)
+        const villageKey = village === 'builderBase' ? 'builder' : 'home'
+        const hallMax = armyMaxLevels[villageKey][item.name]?.[hallLevel - 1]
+        const maxLevel = hallMax || Number(item.maxLevel)
+        const level = Number(item.level) || 0
+        return {
+          name: item.name,
+          level,
+          maxLevel,
+          category,
+          kind,
+          village,
+          remaining: maxLevel - level,
+          progress: Math.min(100, Math.round((level / maxLevel) * 100)),
+        }
+      }))
   }, [player])
 
   const gaps = useMemo(() => trackedItems
@@ -43,7 +52,7 @@ export default function UpgradeGapPlanner({ player }) {
   return <section className="rounded-2xl border border-slate-700/50 bg-[#182030] p-5 sm:p-6 shadow-md">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div><h2 className="font-clash text-2xl text-white uppercase tracking-wide">Upgrade gaps</h2>
-          <p className="mt-1 text-xs text-slate-400">Items furthest from their API-reported max level appear first. Costs and upgrade times are not available here.</p></div>
+          <p className="mt-1 text-xs text-slate-400">Items furthest from their current Town Hall or Builder Hall max level appear first. Costs and upgrade times are not available here.</p></div>
       <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-300">{levelsToMax} level{levelsToMax === 1 ? '' : 's'} to max</span>
     </div>
     <div className="mb-4 rounded-xl border border-slate-700/40 bg-slate-900/30 p-3">
