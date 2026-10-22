@@ -1,37 +1,55 @@
-import ItemIcon from './ItemIcon.jsx'
-import { isSuperTroop } from '../utils/troops.js'
+import ItemIcon from "./ItemIcon.jsx";
+import { isSuperTroop } from "../utils/troops.js";
 
 // Known Hero Pets (from Supercell API player.troops array)
 const PET_NAMES = new Set([
-  'L.A.S.S.I', 'Electro Owl', 'Mighty Yak', 'Unicorn', 'Frosty',
-  'Diggy', 'Poison Lizard', 'Phoenix', 'Sneezy', 'Spirit Fox', 'Angry Jelly'
-])
+  "L.A.S.S.I",
+  "Electro Owl",
+  "Mighty Yak",
+  "Unicorn",
+  "Frosty",
+  "Diggy",
+  "Poison Lizard",
+  "Phoenix",
+  "Sneezy",
+  "Spirit Fox",
+  "Angry Jelly",
+]);
 
 // Known Siege Machines
 const SIEGE_NAMES = new Set([
-  'Wall Wrecker', 'Battle Blimp', 'Stone Slammer', 'Siege Barracks',
-  'Log Launcher', 'Flame Flinger', 'Battle Drill', 'Troop Launcher'
-])
+  "Wall Wrecker",
+  "Battle Blimp",
+  "Stone Slammer",
+  "Siege Barracks",
+  "Log Launcher",
+  "Flame Flinger",
+  "Battle Drill",
+	"Troop Launcher",
+	"Sky Wagon",
+
+  
+]);
 
 function ProgressBar({ level, maxLevel }) {
-  const pct = maxLevel > 0 ? Math.round((level / maxLevel) * 100) : 0
-  const maxed = level >= maxLevel
+  const pct = maxLevel > 0 ? Math.round((level / maxLevel) * 100) : 0;
+  const maxed = level >= maxLevel;
   return (
     <div className="w-full bg-[#0d121d] rounded-full h-1.5 mt-2 overflow-hidden border border-slate-800 shadow-inner">
       <div
         className={`h-full transition-all duration-300 rounded-full ${
           maxed
-            ? 'bg-gradient-to-r from-amber-500 to-[#ffc800] shadow-[0_0_8px_rgba(255,200,0,0.6)]'
-            : 'bg-gradient-to-r from-blue-600 to-cyan-400'
+            ? "bg-gradient-to-r from-amber-500 to-[#ffc800] shadow-[0_0_8px_rgba(255,200,0,0.6)]"
+            : "bg-gradient-to-r from-blue-600 to-cyan-400"
         }`}
         style={{ width: `${pct}%` }}
       />
     </div>
-  )
+  );
 }
 
-function Group({ title, items, kind, village = 'home', renderExtra, badge }) {
-  if (!items || items.length === 0) return null
+function Group({ title, items, kind, village = "home", renderExtra, badge }) {
+  if (!items || items.length === 0) return null;
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
@@ -46,12 +64,11 @@ function Group({ title, items, kind, village = 'home', renderExtra, badge }) {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {items.map((item) => {
-          const maxed = item.level >= item.maxLevel
+          const maxed = item.level >= item.maxLevel;
           return (
             <div
               key={item.name}
-              className="bg-[#182030] border-2 border-slate-700/50 rounded-xl p-3 flex flex-col justify-between hover:border-slate-500/80 transition-colors shadow-md"
-            >
+              className="bg-[#182030] border-2 border-slate-700/50 rounded-xl p-3 flex flex-col justify-between hover:border-slate-500/80 transition-colors shadow-md">
               <div>
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                   <span className="flex min-w-0 items-center gap-2">
@@ -61,15 +78,16 @@ function Group({ title, items, kind, village = 'home', renderExtra, badge }) {
                       village={village}
                       className="w-6 h-6 shrink-0 object-contain drop-shadow"
                     />
-                    <span className="min-w-0 truncate text-xs sm:text-sm text-slate-100 font-semibold" title={item.name}>
+                    <span
+                      className="min-w-0 truncate text-xs sm:text-sm text-slate-100 font-semibold"
+                      title={item.name}>
                       {item.name}
                     </span>
                   </span>
                   <span
                     className={`font-clash text-sm sm:text-lg shrink-0 whitespace-nowrap ${
-                      maxed ? 'text-[#ffc800]' : 'text-slate-300'
-                    }`}
-                  >
+                      maxed ? "text-[#ffc800]" : "text-slate-300"
+                    }`}>
                     {item.level}
                     <span className="text-slate-500 text-[10px] sm:text-xs font-sans">
                       /{item.maxLevel}
@@ -80,23 +98,22 @@ function Group({ title, items, kind, village = 'home', renderExtra, badge }) {
               </div>
               {renderExtra?.(item)}
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 function EquipmentChips({ equipment }) {
-  if (!equipment?.length) return null
+  if (!equipment?.length) return null;
   return (
     <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-700/40">
       {equipment.map((eq) => (
         <span
           key={eq.name}
           className="inline-flex items-center gap-1.5 min-w-0"
-          title={`${eq.name} · Level ${eq.level}/${eq.maxLevel}`}
-        >
+          title={`${eq.name} · Level ${eq.level}/${eq.maxLevel}`}>
           <ItemIcon
             kind="equipment"
             name={eq.name}
@@ -104,38 +121,46 @@ function EquipmentChips({ equipment }) {
           />
           <span className="font-clash text-[11px] sm:text-xs text-slate-300 whitespace-nowrap">
             {eq.level}
-            <span className="text-slate-500 font-sans text-[9px] sm:text-[10px]">/{eq.maxLevel}</span>
+            <span className="text-slate-500 font-sans text-[9px] sm:text-[10px]">
+              /{eq.maxLevel}
+            </span>
           </span>
         </span>
       ))}
     </div>
-  )
+  );
 }
 
 export default function PlayerTroops({ player }) {
-  const homeHeroes = player.heroes?.filter((h) => h.village === 'home') || []
-  const builderHeroes = player.heroes?.filter((h) => h.village === 'builderBase') || []
-  
-  const allHomeTroops = player.troops?.filter((t) => t.village === 'home' && !isSuperTroop(t)) || []
-  const builderTroops = player.troops?.filter((t) => t.village === 'builderBase' && !isSuperTroop(t)) || []
-  const spells = player.spells?.filter((s) => s.village === 'home') || []
-  const heroEquipment = player.heroEquipment || []
+  const homeHeroes = player.heroes?.filter((h) => h.village === "home") || [];
+  const builderHeroes =
+    player.heroes?.filter((h) => h.village === "builderBase") || [];
+
+  const allHomeTroops =
+    player.troops?.filter((t) => t.village === "home" && !isSuperTroop(t)) ||
+    [];
+  const builderTroops =
+    player.troops?.filter(
+      (t) => t.village === "builderBase" && !isSuperTroop(t),
+    ) || [];
+  const spells = player.spells?.filter((s) => s.village === "home") || [];
+  const heroEquipment = player.heroEquipment || [];
 
   // Categorize home village troops into distinct groups
-  const pets = allHomeTroops.filter((t) => PET_NAMES.has(t.name))
-  const siegeMachines = allHomeTroops.filter((t) => SIEGE_NAMES.has(t.name))
+  const pets = allHomeTroops.filter((t) => PET_NAMES.has(t.name));
+  const siegeMachines = allHomeTroops.filter((t) => SIEGE_NAMES.has(t.name));
   const standardTroops = allHomeTroops.filter(
-    (t) => !PET_NAMES.has(t.name) && !SIEGE_NAMES.has(t.name)
-  )
+    (t) => !PET_NAMES.has(t.name) && !SIEGE_NAMES.has(t.name),
+  );
 
   const hasAnything =
     homeHeroes.length ||
     builderHeroes.length ||
     allHomeTroops.length ||
     builderTroops.length ||
-    spells.length
+    spells.length;
 
-  if (!hasAnything) return null
+  if (!hasAnything) return null;
 
   return (
     <div className="space-y-8">
@@ -189,12 +214,7 @@ export default function PlayerTroops({ player }) {
       />
 
       {/* Spells */}
-      <Group
-        title="Spells"
-        items={spells}
-        kind="spell"
-        village="home"
-      />
+      <Group title="Spells" items={spells} kind="spell" village="home" />
 
       {/* Standalone Equipment List */}
       {heroEquipment.length > 0 && (
@@ -209,12 +229,11 @@ export default function PlayerTroops({ player }) {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {heroEquipment.map((eq) => {
-              const maxed = eq.level >= eq.maxLevel
+              const maxed = eq.level >= eq.maxLevel;
               return (
                 <div
                   key={eq.name}
-                  className="bg-[#182030] border-2 border-slate-700/50 rounded-xl p-3 flex flex-col justify-between hover:border-slate-500/80 transition-colors shadow-md"
-                >
+                  className="bg-[#182030] border-2 border-slate-700/50 rounded-xl p-3 flex flex-col justify-between hover:border-slate-500/80 transition-colors shadow-md">
                   <div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex items-center gap-2 min-w-0">
@@ -229,9 +248,8 @@ export default function PlayerTroops({ player }) {
                       </span>
                       <span
                         className={`font-clash text-lg shrink-0 ${
-                          maxed ? 'text-fuchsia-400' : 'text-slate-300'
-                        }`}
-                      >
+                          maxed ? "text-fuchsia-400" : "text-slate-300"
+                        }`}>
                         {eq.level}
                         <span className="text-slate-500 text-xs font-sans">
                           /{eq.maxLevel}
@@ -241,11 +259,11 @@ export default function PlayerTroops({ player }) {
                     <ProgressBar level={eq.level} maxLevel={eq.maxLevel} />
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
